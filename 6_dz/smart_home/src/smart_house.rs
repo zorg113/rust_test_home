@@ -3,6 +3,7 @@ use crate::smart_devices::DeviceLocationProvider;
 use crate::smart_house_errors::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::error::Error;
 use anyhow::Result;
 struct Room {
     devices: HashSet<String>,
@@ -26,6 +27,22 @@ impl SmartHouse {
             name: name_house,
             rooms: HashMap::new(),
         }
+    }
+
+    pub fn add_room(&self, dev_provider: &dyn DeviceLocationProvider) -> Result<bool,Error>{
+        todo!()
+    }
+
+    pub fn add_device(&self, dev_provider: &dyn DeviceLocationProvider) -> Result<bool,Error>{
+        todo!("Code")
+    }
+
+    pub fn delete_room(&self, dev_provider: &dyn DeviceLocationProvider) -> Result<bool,Error>{
+        todo!("Code")
+    }
+
+    pub fn delete_device(&self, dev_provider: &dyn DeviceLocationProvider) -> Result<bool,Error>{
+        todo!("Code")
     }
 
     pub fn get_rooms(&self) -> Result<Vec<&String>, SmartHouseErros> {
@@ -80,7 +97,7 @@ impl SmartHouse {
         let mut info: String = "".to_string();
         for (name_room, room) in &self.rooms {
             for dev in &room.devices {
-                let dat: String = dev_provider.get_device_info(name_room, dev);
+                let dat: String = dev_provider.get_device_info(name_room, dev)?;
                 if !dat.is_empty() {
                     info = format!("{} {} {}\n\t\t   ", info, name_room, dat);
                 }

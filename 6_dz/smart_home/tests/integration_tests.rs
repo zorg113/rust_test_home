@@ -1,5 +1,5 @@
 use smart_home::smart_devices::*;
-use smart_home::smart_house::SmartHouseErros;
+use smart_home::smart_house_errors::*;
 
 struct SmartKettle {
     //    pub status: String,

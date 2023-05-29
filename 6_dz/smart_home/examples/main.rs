@@ -1,5 +1,6 @@
 use smart_home::smart_devices::*;
 use smart_home::smart_house::*;
+use smart_home::smart_house_errors::DeviceInfoProviderError;
 // ***** Пример использования библиотеки умный дом
 // Пользовательские поставщики информации об устройствах.
 // Могут как хранить устройства, так и заимствывать.
@@ -31,7 +32,7 @@ impl DeviceLocationProvider for AllDeviceInfoProvider {
 }
 
 impl DeviceInfoProvider for OwningDeviceInfoProvider {
-    fn get_device_info(&self, room: &str, name: &str) -> String {
+    fn get_device_info(&self, room: &str, name: &str) -> Result<String,DeviceInfoProviderError> {
         let mut out: String = "".to_string();
         if self.socket.room == *room && self.socket.name == *name {
             out = format!(
@@ -39,12 +40,12 @@ impl DeviceInfoProvider for OwningDeviceInfoProvider {
                 name, self.socket.status
             );
         }
-        out
+        Ok(out)
     }
 }
 
 impl<'a, 'b> DeviceInfoProvider for BorrowingDeviceInfoProvider<'a, 'b> {
-    fn get_device_info(&self, room: &str, name: &str) -> String {
+    fn get_device_info(&self, room: &str, name: &str) -> Result<String,DeviceInfoProviderError> {
         let mut out: String = "".to_string();
         if self.socket.room == *room && self.socket.name == *name {
             out = format!(
@@ -58,7 +59,7 @@ impl<'a, 'b> DeviceInfoProvider for BorrowingDeviceInfoProvider<'a, 'b> {
                 name, self.thermo.status
             );
         }
-        out
+        Ok(out)
     }
 }
 

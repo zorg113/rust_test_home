@@ -12,9 +12,10 @@ pub struct SmartThermometer {
 }
 
 pub trait DeviceInfoProvider {
-    
-    fn get_device_info(&self, room: &str, name: &str) -> Result<String,DeviceInfoProviderError>;
-    
+    fn get_device_info(&self, room: &str, name: &str) -> Result<String,DeviceInfoProviderError>;    
+}
+
+pub trait DeviceChangeStateProvider {
     fn add_device_into_room(&self, room: &str, name: &str)->Result<bool,DeviceInfoProviderError>;
 
     fn add_room_in_room(&self,room: &str)->Result<bool,DeviceInfoProviderError>;
@@ -22,7 +23,6 @@ pub trait DeviceInfoProvider {
     fn delete_device_in_room(&self, room: &str, name: &str)->Result<bool,DeviceInfoProviderError>;
 
     fn delete_room(&self, room: &str, name: &str)->Result<bool,DeviceInfoProviderError>;
-    
 }
 
 pub trait DeviceLocationProvider {
