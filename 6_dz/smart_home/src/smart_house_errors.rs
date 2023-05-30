@@ -18,6 +18,9 @@ pub enum SmartHouseErros {
     ReportIsEmpty,
     #[error("Device info provider : ReportIsEmpty")]
     DeviceInInfoProviderError(DeviceInfoProviderError),
+    #[error("Device change content provider : RoomAlreadyExists")]
+    RoomAlreadyExists,    
+
 
 }
 

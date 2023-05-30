@@ -1,5 +1,4 @@
-use crate::smart_devices::DeviceInfoProvider;
-use crate::smart_devices::DeviceLocationProvider;
+use crate::smart_devices::*;
 use crate::smart_house_errors::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -29,20 +28,51 @@ impl SmartHouse {
         }
     }
 
-    pub fn add_room(&self, dev_provider: &dyn DeviceLocationProvider) -> Result<bool,Error>{
-        todo!()
+    pub fn add_room(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool, SmartHouseErros>{
+        let room = dev_provider.add_room_in_home();
+        if self.rooms.contains_key(room) {
+            return Err(SmartHouseErros::RoomAlreadyExists);
+        }
+        self.rooms.insert(room.to_string(), Room::new());
+        Ok(true)
     }
 
-    pub fn add_device(&self, dev_provider: &dyn DeviceLocationProvider) -> Result<bool,Error>{
-        todo!("Code")
+    pub fn add_device(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool, SmartHouseErros>{
+        let (room, device) = dev_provider.add_device_into_room();
+        if self.rooms.contains_key(&room.to_string()) {
+            // проверку на наличие уникальных имен
+            if self.rooms[room].devices.contains( device) {
+                return Err(SmartHouseErros::AddNotUniqueDeviceInRoom);
+            }
+            self.rooms[room]
+                    .devices.insert(device.to_string()); 
+            return Ok(true);
+        }
+        let mut room_ = Room::new();
+        room_.devices.insert(device.to_string());
+        self.rooms.insert(room.to_string(),room_ );
+        Ok(true)
     }
 
-    pub fn delete_room(&self, dev_provider: &dyn DeviceLocationProvider) -> Result<bool,Error>{
-        todo!("Code")
+    pub fn delete_room(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool,SmartHouseErros>{
+        let room = dev_provider.delete_room().to_string();
+        if self.rooms.contains_key(&room) {
+           self.rooms.remove(&room);
+           return Ok(true)
+        }
+        Err(SmartHouseErros::NoRoomsInHouse)
     }
 
-    pub fn delete_device(&self, dev_provider: &dyn DeviceLocationProvider) -> Result<bool,Error>{
-        todo!("Code")
+    pub fn delete_device(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool,SmartHouseErros>{
+        let (room,device) = dev_provider.delete_device_in_room();
+        if self.rooms.contains_key(room){
+            if self.rooms[room].devices.contains(device) {
+                self.rooms[room].devices.remove(device);
+                return Ok(true);
+            }
+            return Err(SmartHouseErros::DeviceNotFound);
+        }
+        return Err(SmartHouseErros::NoRoomsInHouse);
     }
 
     pub fn get_rooms(&self) -> Result<Vec<&String>, SmartHouseErros> {
