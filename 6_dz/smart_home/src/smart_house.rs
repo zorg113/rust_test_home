@@ -2,7 +2,6 @@ use crate::smart_devices::*;
 use crate::smart_house_errors::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::error::Error;
 use anyhow::Result;
 struct Room {
     devices: HashSet<String>,
@@ -44,8 +43,7 @@ impl SmartHouse {
             if self.rooms[room].devices.contains( device) {
                 return Err(SmartHouseErros::AddNotUniqueDeviceInRoom);
             }
-            self.rooms[room]
-                    .devices.insert(device.to_string()); 
+            self.rooms.get_mut(room).unwrap().devices.insert(device.to_string()); 
             return Ok(true);
         }
         let mut room_ = Room::new();
@@ -67,7 +65,7 @@ impl SmartHouse {
         let (room,device) = dev_provider.delete_device_in_room();
         if self.rooms.contains_key(room){
             if self.rooms[room].devices.contains(device) {
-                self.rooms[room].devices.remove(device);
+                self.rooms.get_mut(room).unwrap().devices.remove(device);
                 return Ok(true);
             }
             return Err(SmartHouseErros::DeviceNotFound);
