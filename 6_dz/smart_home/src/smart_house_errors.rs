@@ -8,18 +8,18 @@ pub enum DeviceInfoProviderError{
 
 #[derive(Error, Debug)]
 pub enum SmartHouseErros {
-    #[error("Problem with add_device in home : AddNotUniqueDeviceName")]
-    AddNotUniqueDeviceInRoom,
-    #[error("Problem with device not found in room : DeviceNotFound")]
-    DeviceNotFound,
-    #[error("Room not'found in home : NoRoomsInHouse")]
-    NoRoomsInHouse,
+    #[error("Problem with add_device in home : AddNotUniqueDeviceName {0}")]
+    AddNotUniqueDeviceInRoom(String),
+    #[error("Problem with device not found in room : DeviceNotFound {0}")]
+    DeviceNotFound(String),
+    #[error("Room not'found in home : NoRoomsInHouse {0}")]
+    NoRoomsInHouse(String),
     #[error("Report is empty : ReportIsEmpty")]
     ReportIsEmpty,
     #[error("Device info provider : ReportIsEmpty")]
     DeviceInInfoProviderError(DeviceInfoProviderError),
-    #[error("Device change content provider : RoomAlreadyExists")]
-    RoomAlreadyExists,    
+    #[error("Device change content provider : RoomAlreadyExists {0}")]
+    RoomAlreadyExists(String),    
 
 
 }

@@ -30,7 +30,7 @@ impl SmartHouse {
     pub fn add_room(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool, SmartHouseErros>{
         let room = dev_provider.add_room_in_home();
         if self.rooms.contains_key(room) {
-            return Err(SmartHouseErros::RoomAlreadyExists);
+            return Err(SmartHouseErros::RoomAlreadyExists(room.to_string()));
         }
         self.rooms.insert(room.to_string(), Room::new());
         Ok(true)
@@ -41,7 +41,7 @@ impl SmartHouse {
         if self.rooms.contains_key(&room.to_string()) {
             // проверку на наличие уникальных имен
             if self.rooms[room].devices.contains( device) {
-                return Err(SmartHouseErros::AddNotUniqueDeviceInRoom);
+                return Err(SmartHouseErros::AddNotUniqueDeviceInRoom(device.to_string()));
             }
             self.rooms.get_mut(room).unwrap().devices.insert(device.to_string()); 
             return Ok(true);
@@ -58,7 +58,7 @@ impl SmartHouse {
            self.rooms.remove(&room);
            return Ok(true)
         }
-        Err(SmartHouseErros::NoRoomsInHouse)
+        Err(SmartHouseErros::NoRoomsInHouse(room.to_string()))
     }
 
     pub fn delete_device(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool,SmartHouseErros>{
@@ -68,9 +68,9 @@ impl SmartHouse {
                 self.rooms.get_mut(room).unwrap().devices.remove(device);
                 return Ok(true);
             }
-            return Err(SmartHouseErros::DeviceNotFound);
+            return Err(SmartHouseErros::DeviceNotFound(device.to_string()));
         }
-        return Err(SmartHouseErros::NoRoomsInHouse);
+        return Err(SmartHouseErros::NoRoomsInHouse(room.to_string()));
     }
 
     pub fn get_rooms(&self) -> Result<Vec<&String>, SmartHouseErros> {
@@ -79,7 +79,7 @@ impl SmartHouse {
             out.push(name);
         }
         if out.is_empty() {
-            return Err(SmartHouseErros::NoRoomsInHouse);
+            return Err(SmartHouseErros::NoRoomsInHouse("IS EMPTY".to_string()));
         }
         Ok(out)
     }
@@ -110,7 +110,7 @@ impl SmartHouse {
                 room.devices.insert(val.1);
                 e.insert(room);
             } else if self.rooms[&val.0].devices.contains(&val.1) {
-                return Err(SmartHouseErros::AddNotUniqueDeviceInRoom);
+                return Err(SmartHouseErros::AddNotUniqueDeviceInRoom(val.1));
             } else {
                 self.rooms.get_mut(&val.0).unwrap().devices.insert(val.1);
             }
@@ -132,7 +132,7 @@ impl SmartHouse {
             }
         }
         if info.is_empty() {
-            return Err(SmartHouseErros::DeviceNotFound);
+            return Err(SmartHouseErros::DeviceNotFound("EMPTY".to_string()));
         }
         Ok(info)
     }
