@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum DeviceInfoProviderError{
+pub enum DeviceInfoProviderError {
     #[error("Report is empty : ReportIsEmpty")]
     DeficeNotFoundInSmartHome,
 }
@@ -19,14 +19,11 @@ pub enum SmartHouseErros {
     #[error("Device info provider : ReportIsEmpty")]
     DeviceInInfoProviderError(DeviceInfoProviderError),
     #[error("Device change content provider : RoomAlreadyExists {0}")]
-    RoomAlreadyExists(String),    
-
-
+    RoomAlreadyExists(String),
 }
 
-impl From<DeviceInfoProviderError> for SmartHouseErros{
+impl From<DeviceInfoProviderError> for SmartHouseErros {
     fn from(value: DeviceInfoProviderError) -> Self {
         SmartHouseErros::DeviceInInfoProviderError(value)
     }
 }
-

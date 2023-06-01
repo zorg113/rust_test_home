@@ -31,9 +31,32 @@ impl DeviceLocationProvider for AllDeviceInfoProvider {
     }
 }
 
+struct DeviceContent {
+    room: String,
+    dev: String,
+}
+
+impl DeviceChangeContentProvider for DeviceContent {
+    fn add_device_into_room(&self) -> (&str, &str) {
+        (&self.room, &self.dev)
+    }
+
+    fn add_room_in_home(&self) -> &str {
+        &self.room
+    }
+
+    fn delete_device_in_room(&self) -> (&str, &str) {
+        (&self.room, &self.dev)
+    }
+
+    fn delete_room(&self) -> &str {
+        &self.room
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::{AllDeviceInfoProvider, SmartHouseErros, SmartKettle, SmartLamp};
+    use crate::{AllDeviceInfoProvider, DeviceContent, SmartHouseErros, SmartKettle, SmartLamp};
 
     macro_rules! assert_err {
         ($expression:expr, $($pattern:tt)+) => {
@@ -163,10 +186,58 @@ mod test {
             }],
         };
         let mut home = smart_home::smart_house::SmartHouse::new("MyHome".to_string());
-        home.add_device(&device);
-        //assert_err!(
-        //    home.add_devices(&device),
-        //    Err(SmartHouseErros::AddNotUniqueDeviceInRoom())
-        //);
+        let _msg = "HotSpot".to_string();
+        assert_err!(
+            home.add_devices(&device),
+            Err(SmartHouseErros::AddNotUniqueDeviceInRoom(_msg))
+        );
+    }
+
+    #[test]
+    fn change_content_in_home() {
+        let add_device1: DeviceContent = DeviceContent {
+            room: "Kitchen".to_string(),
+            dev: "Socket".to_string(),
+        };
+        let add_device2: DeviceContent = DeviceContent {
+            room: "Kitchen".to_string(),
+            dev: "Multicooker".to_string(),
+        };
+        let add_device3: DeviceContent = DeviceContent {
+            room: "Cabinet".to_string(),
+            dev: "Lamp".to_string(),
+        };
+        let mut home = smart_home::smart_house::SmartHouse::new("TestHome".to_string());
+        home.add_device(&add_device1).unwrap();
+        home.add_device(&add_device2).unwrap();
+        let rez = home.devices("Kitchen");
+
+        if let Some(mut x) = rez {
+            x.sort();
+            assert_eq!(x, vec![&"Multicooker".to_string(), &"Socket".to_string()]);
+        }
+
+        home.delete_device(&add_device2).unwrap();
+        let rez = home.devices("Kitchen");
+        if let Some(mut x) = rez {
+            x.sort();
+            assert_eq!(x, vec![&"Socket".to_string()]);
+        }
+
+        home.add_room(&add_device3).unwrap();
+
+        let rez = home.get_rooms();
+        if let Ok(mut x) = rez {
+            x.sort();
+            assert_eq!(x, vec![&"Cabinet".to_string(), &"Kitchen".to_string()]);
+        }
+
+        home.delete_room(&add_device3).unwrap();
+        let rez = home.get_rooms();
+
+        if let Ok(mut x) = rez {
+            x.sort();
+            assert_eq!(x, vec![&"Kitchen".to_string()]);
+        }
     }
 }

@@ -32,7 +32,7 @@ impl DeviceLocationProvider for AllDeviceInfoProvider {
 }
 
 impl DeviceInfoProvider for OwningDeviceInfoProvider {
-    fn get_device_info(&self, room: &str, name: &str) -> Result<String,DeviceInfoProviderError> {
+    fn get_device_info(&self, room: &str, name: &str) -> Result<String, DeviceInfoProviderError> {
         let mut out: String = "".to_string();
         if self.socket.room == *room && self.socket.name == *name {
             out = format!(
@@ -45,7 +45,7 @@ impl DeviceInfoProvider for OwningDeviceInfoProvider {
 }
 
 impl<'a, 'b> DeviceInfoProvider for BorrowingDeviceInfoProvider<'a, 'b> {
-    fn get_device_info(&self, room: &str, name: &str) -> Result<String,DeviceInfoProviderError> {
+    fn get_device_info(&self, room: &str, name: &str) -> Result<String, DeviceInfoProviderError> {
         let mut out: String = "".to_string();
         if self.socket.room == *room && self.socket.name == *name {
             out = format!(
@@ -138,7 +138,7 @@ fn main() {
     }
     // Строим отчёт с использованием `OwningDeviceInfoProvider`.
     let info_provider_1 = OwningDeviceInfoProvider { socket: socket1 };
-    // todo: после добавления обобщённого аргумента в метод, расскоментировать передачу параметра
+
     let report1 = match house.create_report(&info_provider_1) {
         Ok(u) => u,
         Err(e) => panic!("Problem with report 1 : {:?}", e),
@@ -149,7 +149,7 @@ fn main() {
         socket: &socket2,
         thermo: &thermo,
     };
-    // todo: после добавления обобщённого аргумента в метод, расскоментировать передачу параметра
+
     let report2 = match house.create_report(&info_provider_2) {
         Ok(u) => u,
         Err(e) => panic!("Problem with report 2 : {:?}", e),

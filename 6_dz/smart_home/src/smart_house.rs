@@ -1,8 +1,8 @@
 use crate::smart_devices::*;
 use crate::smart_house_errors::*;
+use anyhow::Result;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use anyhow::Result;
 struct Room {
     devices: HashSet<String>,
 }
@@ -27,7 +27,10 @@ impl SmartHouse {
         }
     }
 
-    pub fn add_room(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool, SmartHouseErros>{
+    pub fn add_room(
+        &mut self,
+        dev_provider: &dyn DeviceChangeContentProvider,
+    ) -> Result<bool, SmartHouseErros> {
         let room = dev_provider.add_room_in_home();
         if self.rooms.contains_key(room) {
             return Err(SmartHouseErros::RoomAlreadyExists(room.to_string()));
@@ -36,41 +39,56 @@ impl SmartHouse {
         Ok(true)
     }
 
-    pub fn add_device(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool, SmartHouseErros>{
+    pub fn add_device(
+        &mut self,
+        dev_provider: &dyn DeviceChangeContentProvider,
+    ) -> Result<bool, SmartHouseErros> {
         let (room, device) = dev_provider.add_device_into_room();
         if self.rooms.contains_key(&room.to_string()) {
             // проверку на наличие уникальных имен
-            if self.rooms[room].devices.contains( device) {
-                return Err(SmartHouseErros::AddNotUniqueDeviceInRoom(device.to_string()));
+            if self.rooms[room].devices.contains(device) {
+                return Err(SmartHouseErros::AddNotUniqueDeviceInRoom(
+                    device.to_string(),
+                ));
             }
-            self.rooms.get_mut(room).unwrap().devices.insert(device.to_string()); 
+            self.rooms
+                .get_mut(room)
+                .unwrap()
+                .devices
+                .insert(device.to_string());
             return Ok(true);
         }
         let mut room_ = Room::new();
         room_.devices.insert(device.to_string());
-        self.rooms.insert(room.to_string(),room_ );
+        self.rooms.insert(room.to_string(), room_);
         Ok(true)
     }
 
-    pub fn delete_room(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool,SmartHouseErros>{
+    pub fn delete_room(
+        &mut self,
+        dev_provider: &dyn DeviceChangeContentProvider,
+    ) -> Result<bool, SmartHouseErros> {
         let room = dev_provider.delete_room().to_string();
         if self.rooms.contains_key(&room) {
-           self.rooms.remove(&room);
-           return Ok(true)
+            self.rooms.remove(&room);
+            return Ok(true);
         }
         Err(SmartHouseErros::NoRoomsInHouse(room.to_string()))
     }
 
-    pub fn delete_device(&mut self, dev_provider: &dyn DeviceChangeContentProvider) -> Result<bool,SmartHouseErros>{
-        let (room,device) = dev_provider.delete_device_in_room();
-        if self.rooms.contains_key(room){
+    pub fn delete_device(
+        &mut self,
+        dev_provider: &dyn DeviceChangeContentProvider,
+    ) -> Result<bool, SmartHouseErros> {
+        let (room, device) = dev_provider.delete_device_in_room();
+        if self.rooms.contains_key(room) {
             if self.rooms[room].devices.contains(device) {
                 self.rooms.get_mut(room).unwrap().devices.remove(device);
                 return Ok(true);
             }
             return Err(SmartHouseErros::DeviceNotFound(device.to_string()));
         }
-        return Err(SmartHouseErros::NoRoomsInHouse(room.to_string()));
+        Err(SmartHouseErros::NoRoomsInHouse(room.to_string()))
     }
 
     pub fn get_rooms(&self) -> Result<Vec<&String>, SmartHouseErros> {
