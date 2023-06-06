@@ -28,13 +28,13 @@ impl TrprotServer {
     }
 
     fn try_handshake(mut stream: TcpStream) -> ConnectResult<TrprotConnection> {
-        let mut buf = [0; 4];
+        let mut buf = [0; 9];
         stream.read_exact(&mut buf)?;
-        if &buf != b"clnt" {
+        if &buf != b"trpclient" {
             let msg = format!("received: {:?}", buf);
             return Err(ConnectError::BadHandshake(msg));
         }
-        stream.write_all(b"serv")?;
+        stream.write_all(b"trpserver")?;
         Ok(TrprotConnection { stream })
     }
 }
