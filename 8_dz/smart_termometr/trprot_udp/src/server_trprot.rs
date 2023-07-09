@@ -1,12 +1,13 @@
 use crate::errors_trprot::{ConnectError, ConnectResult, RecvResult, SendResult};
 use std::io;
 use std::io::{Read, Write};
-use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
+//use std::net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs};
+use std::net::{SocketAddr, UdpSocket, ToSocketAddrs};
 use thiserror::Error;
 
 /// Represent STP server, that can accept incoming connections.
 pub struct TrprotServer {
-    tcp: TcpListener,
+    udp: UdpSocket,
 }
 
 impl TrprotServer {
@@ -15,16 +16,17 @@ impl TrprotServer {
     where
         Addrs: ToSocketAddrs,
     {
-        let tcp = TcpListener::bind(addrs)?;
-        Ok(Self { tcp })
+        let udp = UdpSocket::bind(addrs)?;
+        Ok(Self { udp })
     }
 
     /// Blocking iterator for incoming connections.
     pub fn incoming(&self) -> impl Iterator<Item = ConnectResult<TrprotConnection>> + '_ {
-        self.tcp.incoming().map(|s| match s {
+        let mut buf=[0,1024];
+        match self.udp.recv_from(&mut buf) {
             Ok(s) => Self::try_handshake(s),
             Err(e) => Err(ConnectError::Io(e)),
-        })
+        }
     }
 
     fn try_handshake(mut stream: TcpStream) -> ConnectResult<TrprotConnection> {
@@ -52,7 +54,7 @@ pub enum BindError {
 ///
 /// Allows to receive requests and send responses.
 pub struct TrprotConnection {
-    stream: TcpStream,
+    udp: UdpSocket,
 }
 
 impl TrprotConnection {
@@ -63,11 +65,11 @@ impl TrprotConnection {
 
     /// Receive requests from client
     pub fn recv_request(&mut self) -> RecvResult {
-        crate::recv_string(&mut self.stream)
+        crate::recv_string(&mut self.udp)
     }
 
     /// Address of connected client
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
-        self.stream.peer_addr()
+        self.udp.peer_addr()
     }
 }
