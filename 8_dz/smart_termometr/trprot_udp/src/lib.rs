@@ -1,5 +1,6 @@
 use std::{
     error::Error,
+    mem::size_of,
     net::{ToSocketAddrs, UdpSocket},
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -12,6 +13,29 @@ use std::{
 pub struct SmartThermo {
     temperature: Arc<Temperature>,
     finished: Arc<AtomicBool>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Buffer {
+    buff: Vec<u8>,
+}
+
+impl Buffer {
+    pub fn new() -> Self {
+        Buffer { buff: vec![] }
+    }
+
+    pub fn len(self) -> usize {
+        self.buff.len()
+    }
+    pub fn write_message(&mut self, str: &String) {
+        self.buff.extend(str.as_bytes())
+    }
+
+    pub fn read_message(&self) -> String {
+        let s = String::from_utf8_lossy(self.buff.as_slice());
+        s.to_string().clone()
+    }
 }
 
 impl SmartThermo {
@@ -28,7 +52,8 @@ impl SmartThermo {
             if finished_clone.load(Ordering::SeqCst) {
                 return;
             }
-
+            // let (number_of_bytes, src_addr) = socket.peek_from(&mut buf)
+            //                                         .expect("Didn't receive data");
             let mut buf = [0; 4];
             if let Err(err) = socket.recv_from(&mut buf) {
                 println!("can't receive datagram: {err}");

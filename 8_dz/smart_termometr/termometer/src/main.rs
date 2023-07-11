@@ -1,8 +1,11 @@
 use std::{
+    io::{Read, Result, Write},
     net::{SocketAddr, UdpSocket},
     thread,
     time::{Duration, Instant},
 };
+
+use serde::{Deserialize, Serialize};
 
 fn main() {
     let args = std::env::args();
@@ -23,7 +26,9 @@ fn main() {
     println!("Starting send temperature from {bind_addr} to {receiver}");
     loop {
         let temperature = temperature_generator.generate();
+
         let bytes = temperature.to_be_bytes();
+        let size_msg = bytes.len();
         let send_result = socket.send_to(&bytes, receiver);
         if let Err(err) = send_result {
             println!("can't send temperature: {err}")

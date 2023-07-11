@@ -1,7 +1,3 @@
 [workspace]
 
-members = [
-  "trprot_udp",
-  "termometer",
-  "client_termometer"
-]
+members = ["trprot_udp", "termometer", "client_termometer"]
