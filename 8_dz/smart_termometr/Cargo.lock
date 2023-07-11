@@ -5,6 +5,9 @@ version = 3
 [[package]]
 name = "client_termometer"
 version = "0.1.0"
+dependencies = [
+ "trprot_udp",
+]
 
 [[package]]
 name = "itoa"

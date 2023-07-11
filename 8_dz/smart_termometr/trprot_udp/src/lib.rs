@@ -1,25 +1,69 @@
-use crate::errors_trprot::{RecvError, RecvResult, SendResult};
-use std::io::{Read, Write};
+use std::{
+    error::Error,
+    net::{ToSocketAddrs, UdpSocket},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
+    thread,
+    time::Duration,
+};
 
-pub mod client_trprot;
-pub mod errors_trprot;
-pub mod server_trprot;
-
-fn send_string<Data: AsRef<str>, Writer: Write>(data: Data, mut writer: Writer) -> SendResult {
-    let bytes = data.as_ref().as_bytes();
-    let len = bytes.len() as u32;
-    let len_bytes = len.to_be_bytes();
-    writer.write_all(&len_bytes)?;
-    writer.write_all(bytes)?;
-    Ok(())
+pub struct SmartThermo {
+    temperature: Arc<Temperature>,
+    finished: Arc<AtomicBool>,
 }
 
-fn recv_string<Reader: Read>(mut reader: Reader) -> RecvResult {
-    let mut buf = [0; 4];
-    reader.read_exact(&mut buf)?;
-    let len = u32::from_be_bytes(buf);
+impl SmartThermo {
+    pub fn new(address: impl ToSocketAddrs) -> Result<Self, Box<dyn Error>> {
+        let socket = UdpSocket::bind(address)?;
+        socket.set_read_timeout(Some(Duration::from_secs(1)))?;
 
-    let mut buf = vec![0; len as _];
-    reader.read_exact(&mut buf)?;
-    String::from_utf8(buf).map_err(|_| RecvError::BadEncoding)
+        let finished = Arc::new(AtomicBool::new(false));
+        let temperature = Arc::new(Temperature::default());
+
+        let temperature_clone = temperature.clone();
+        let finished_clone = finished.clone();
+        thread::spawn(move || loop {
+            if finished_clone.load(Ordering::SeqCst) {
+                return;
+            }
+
+            let mut buf = [0; 4];
+            if let Err(err) = socket.recv_from(&mut buf) {
+                println!("can't receive datagram: {err}");
+            }
+
+            let val = f32::from_be_bytes(buf);
+            temperature_clone.set(val);
+        });
+
+        Ok(Self {
+            temperature,
+            finished,
+        })
+    }
+
+    pub fn get_temperature(&self) -> f32 {
+        self.temperature.get()
+    }
+}
+
+impl Drop for SmartThermo {
+    fn drop(&mut self) {
+        self.finished.store(true, Ordering::SeqCst)
+    }
+}
+
+#[derive(Default)]
+struct Temperature(Mutex<f32>);
+
+impl Temperature {
+    pub fn get(&self) -> f32 {
+        *self.0.lock().unwrap()
+    }
+
+    pub fn set(&self, val: f32) {
+        *self.0.lock().unwrap() = val
+    }
 }
