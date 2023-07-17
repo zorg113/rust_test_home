@@ -4,7 +4,7 @@ members = [
 "trprot_udp_async",
 "trprot_tcp_async",
 "smart_socket_async",
-"termometr_async",
+#"termometr_async",
 "client_smart_socket_async",
 "client_termometr_async"
 ]
