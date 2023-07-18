@@ -16,7 +16,7 @@ impl TrprotClient {
         Addrs: ToSocketAddrs,
     {
         let stream = TcpStream::connect(addrs).await?;
-        Self::try_handsnake(stream)
+        Self::try_handsnake(stream).await?
     }
 
     pub async fn send_request<R: AsRef<str>>(&mut self, req: R) -> RequestResult {

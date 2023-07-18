@@ -1,20 +1,26 @@
 use crate::errors_trprot::{RecvError, RecvResult, SendResult};
-use std::io::{Read, Write};
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::{TcpStream, ToSocketAddrs},
+};
 
 pub mod client_trprot;
 pub mod errors_trprot;
 pub mod server_trprot;
 
-fn send_string<Data: AsRef<str>, Writer: Write>(data: Data, mut writer: Writer) -> SendResult {
+fn send_string<Data: AsRef<str>, Writer: AsyncWriteExt>(
+    data: Data,
+    mut writer: Writer,
+) -> SendResult {
     let bytes = data.as_ref().as_bytes();
     let len = bytes.len() as u32;
     let len_bytes = len.to_be_bytes();
-    writer.write_all(&len_bytes)?;
-    writer.write_all(bytes)?;
+    writer.write_all(&len_bytes);
+    writer.write_all(bytes);
     Ok(())
 }
 
-fn recv_string<Reader: Read>(mut reader: Reader) -> RecvResult {
+fn recv_string<Reader: AsyncReadExt>(mut reader: Reader) -> RecvResult {
     let mut buf = [0; 4];
     reader.read_exact(&mut buf)?;
     let len = u32::from_be_bytes(buf);
