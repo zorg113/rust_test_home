@@ -1,9 +1,11 @@
+use std::{io, net::SocketAddr};
+
 use crate::errors_trprot::{ConnectError, ConnectResult, RecvResult, SendResult};
+use thiserror::Error;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs}
-}
-use thiserror::Error;
+    net::{TcpListener, TcpStream, ToSocketAddrs},
+};
 
 /// Represent STP server, that can accept incoming connections.
 pub struct TrprotServer {
@@ -12,30 +14,30 @@ pub struct TrprotServer {
 
 impl TrprotServer {
     /// Binds server to specefied socket.
-    pub fn bind<Addrs>(addrs: Addrs) -> BindResult
+    pub async fn bind<Addrs>(addrs: Addrs) -> BindResult
     where
         Addrs: ToSocketAddrs,
     {
-        let tcp = TcpListener::bind(addrs)?;
+        let tcp = TcpListener::bind(addrs).await.unwrap();
         Ok(Self { tcp })
     }
 
     /// Blocking iterator for incoming connections.
-    pub fn incoming(&self) -> impl Iterator<Item = ConnectResult<TrprotConnection>> + '_ {
-        self.tcp.incoming().map(|s| match s {
-            Ok(s) => Self::try_handshake(s),
+    pub async fn incoming(&self) -> ConnectResult<TrprotConnection> {
+        match self.tcp.accept().await {
+            Ok((_soket, _)) => Self::try_handshake(_soket).await,
             Err(e) => Err(ConnectError::Io(e)),
-        })
+        }
     }
 
-    fn try_handshake(mut stream: TcpStream) -> ConnectResult<TrprotConnection> {
+    async fn try_handshake(mut stream: TcpStream) -> ConnectResult<TrprotConnection> {
         let mut buf = [0; 9];
-        stream.read_exact(&mut buf)?;
+        stream.read_exact(&mut buf).await?;
         if &buf != b"trpclient" {
             let msg = format!("received: {:?}", buf);
             return Err(ConnectError::BadHandshake(msg));
         }
-        stream.write_all(b"trpserver")?;
+        stream.write_all(b"trpserver").await?;
         Ok(TrprotConnection { stream })
     }
 }
@@ -58,13 +60,13 @@ pub struct TrprotConnection {
 
 impl TrprotConnection {
     /// Send response to client
-    pub fn send_response<Resp: AsRef<str>>(&mut self, response: Resp) -> SendResult {
-        crate::send_string(response, &mut self.stream)
+    pub async fn send_response<Resp: AsRef<str>>(&mut self, response: Resp) -> SendResult {
+        crate::send_string(response, &mut self.stream).await
     }
 
     /// Receive requests from client
-    pub fn recv_request(&mut self) -> RecvResult {
-        crate::recv_string(&mut self.stream)
+    pub async fn recv_request(&mut self) -> RecvResult {
+        crate::recv_string(&mut self.stream).await
     }
 
     /// Address of connected client

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use trprot::client_trprot::TrprotClient;
+use trprot_tcp_async::client_trprot::TrprotClient;
 
 #[derive(Serialize, Deserialize)]
 enum Request {
@@ -27,8 +27,8 @@ enum Message {
         power: f32,
     },
 }
-
-fn main() -> Result<(), Box<dyn Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     let mesg_get_status = Message::Request {
         id: Request::GetStatus,
         value: Status::None,
@@ -42,18 +42,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         value: Status::Off,
     };
     // message get status smart_socket
-    send_command(mesg_get_status)?;
+    send_command(mesg_get_status).await?;
     // message on smart_socket
-    send_command(mesg_on)?;
+    send_command(mesg_on).await?;
     // message off smart_socket
-    send_command(mesg_off)?;
+    send_command(mesg_off).await?;
     Ok(())
 }
 
-fn send_command(msg: Message) -> Result<(), Box<dyn Error>> {
-    let mut client = TrprotClient::connect("127.0.0.1:55331")?;
+async fn send_command(msg: Message) -> Result<(), Box<dyn Error>> {
+    let mut client = TrprotClient::connect("127.0.0.1:55331").await?;
     let mesg = serde_json::to_string(&msg).unwrap();
-    let response = client.send_request(mesg)?;
+    let response = client.send_request(mesg).await?;
     println!("Log: SmartSocket send {0}", response);
     Ok(())
 }

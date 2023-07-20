@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::process;
-use trprot::server_trprot::{TrprotConnection, TrprotServer};
 
+use trprot_tcp_async::server_trprot::{TrprotConnection, TrprotServer};
+#[derive(Clone, Copy)]
 struct SmartSocket {
     status: Status,
     power: f32,
@@ -33,27 +34,29 @@ enum Message {
         power: f32,
     },
 }
-
-fn main() {
+#[tokio::main]
+async fn main() {
     ctrlc::set_handler(move || {
         println!("SmartSocket stop (received Ctrl+C!)");
         process::exit(0)
     })
     .expect("Error setting Ctrl-C handler");
     let mut sm_socket = SmartSocket::new();
-    let server = TrprotServer::bind("127.0.0.1:55331").unwrap();
+    let server = TrprotServer::bind("127.0.0.1:55331").await.unwrap();
     println!("Start SmartSocket ... (Ctrl+C exit)");
-    for connection in server.incoming() {
-        process_connection(connection.unwrap(), &mut sm_socket).unwrap();
+    loop {
+        let conn = server.incoming().await.unwrap();
+        tokio::spawn(async move {
+            process_connection(conn, &mut sm_socket).await.unwrap();
+        });
     }
-    print!("End server");
 }
 
-fn process_connection(
+async fn process_connection(
     mut conn: TrprotConnection,
     sm_socket: &mut SmartSocket,
 ) -> Result<(), Box<dyn Error>> {
-    let req = conn.recv_request()?;
+    let req = conn.recv_request().await?;
     println!("Log: request {0}", req);
     let mesg: Message = serde_json::from_str(&req).unwrap();
     let (_, status) = match mesg {
@@ -62,7 +65,8 @@ fn process_connection(
     };
     sm_socket.set_status(status);
     let response = sm_socket.get_status();
-    conn.send_response(serde_json::to_string(&response)?)?;
+    conn.send_response(serde_json::to_string(&response)?)
+        .await?;
     Ok(())
 }
 

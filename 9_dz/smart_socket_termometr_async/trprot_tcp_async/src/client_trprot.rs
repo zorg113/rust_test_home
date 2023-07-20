@@ -1,7 +1,7 @@
 use crate::errors_trprot::{ConnectError, ConnectResult, RecvError, SendError};
-use tokio ::{
+use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::{TcpStream, ToSocketAddrs}
+    net::{TcpStream, ToSocketAddrs},
 };
 
 use thiserror::Error;
@@ -16,7 +16,7 @@ impl TrprotClient {
         Addrs: ToSocketAddrs,
     {
         let stream = TcpStream::connect(addrs).await?;
-        Self::try_handsnake(stream).await?
+        Self::try_handsnake(stream).await
     }
 
     pub async fn send_request<R: AsRef<str>>(&mut self, req: R) -> RequestResult {
@@ -25,7 +25,7 @@ impl TrprotClient {
         Ok(response)
     }
 
-    fn async try_handsnake(mut stream: TcpStream) -> ConnectResult<Self> {
+    async fn try_handsnake(mut stream: TcpStream) -> ConnectResult<Self> {
         stream.write_all(b"trpclient").await?;
         let mut buf = [0; 9];
         stream.read_exact(&mut buf).await?;
