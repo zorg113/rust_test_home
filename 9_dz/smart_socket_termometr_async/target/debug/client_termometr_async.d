@@ -1,1 +1,0 @@
-E:\otus\home\rust_test_home\9_dz\smart_socket_termometr_async\target\debug\client_termometr_async.exe: E:\otus\home\rust_test_home\9_dz\smart_socket_termometr_async\client_termometr_async\src\main.rs E:\otus\home\rust_test_home\9_dz\smart_socket_termometr_async\trprot_udp_async\src\lib.rs
