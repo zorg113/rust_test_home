@@ -130,6 +130,9 @@ fn main() {
         room: "BedRoom".to_string(),
         status: "Off".to_string(),
     };
+    // Display
+    println!("Display SmartSocket => {} ", socket2);
+    println!("Display SmartTermometer => {} ", thermo);
     // Инициализация дома и передача спика устройств дому
     let mut house = SmartHouse::new("MyHome".to_string());
     match house.add_devices(&load_devices()) {

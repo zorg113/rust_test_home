@@ -1,5 +1,6 @@
 // Пользовательские устройства:
 use crate::smart_house_errors::*;
+use std::fmt;
 pub struct SmartSocket {
     pub status: String,
     pub name: String,
@@ -9,6 +10,30 @@ pub struct SmartThermometer {
     pub status: String,
     pub name: String,
     pub room: String,
+}
+
+impl fmt::Display for SmartSocket {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "status: {},
+             name: {},
+             room: {},",
+            self.status, self.name, self.room
+        )
+    }
+}
+
+impl fmt::Display for SmartThermometer {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "status: {},
+             name: {},
+             room: {},",
+            self.status, self.name, self.room
+        )
+    }
 }
 
 pub trait DeviceInfoProvider {

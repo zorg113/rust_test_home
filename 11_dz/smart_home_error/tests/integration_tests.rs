@@ -76,7 +76,6 @@ mod test {
     fn add_one_device_in_room_smart_house() {
         let device: AllDeviceInfoProvider = AllDeviceInfoProvider {
             lamps: vec![SmartLamp {
-                //status:"Off".to_string(),
                 name: "Lamp1".to_string(),
                 room: "Kitchen".to_string(),
             }],
@@ -107,12 +106,10 @@ mod test {
         let dev_ok = vec!["Lamp1".to_string(), "HotSpot".to_string()];
         let device: AllDeviceInfoProvider = AllDeviceInfoProvider {
             lamps: vec![SmartLamp {
-                //status:"Off".to_string(),
                 name: "Lamp1".to_string(),
                 room: "BedRoom".to_string(),
             }],
             kettles: vec![SmartKettle {
-                //status:"Off".to_string(),
                 name: "HotSpot".to_string(),
                 room: "Kitchen".to_string(),
             }],
@@ -144,12 +141,10 @@ mod test {
         let dev_ok = vec!["Lamp1".to_string(), "HotSpot".to_string()];
         let device: AllDeviceInfoProvider = AllDeviceInfoProvider {
             lamps: vec![SmartLamp {
-                //status:"Off".to_string(),
                 name: "Lamp1".to_string(),
                 room: "Kitchen".to_string(),
             }],
             kettles: vec![SmartKettle {
-                //status:"Off".to_string(),
                 name: "HotSpot".to_string(),
                 room: "Kitchen".to_string(),
             }],
@@ -175,12 +170,10 @@ mod test {
     fn add_devices_with_equal_name_in_one_room_smart_house() {
         let device: AllDeviceInfoProvider = AllDeviceInfoProvider {
             lamps: vec![SmartLamp {
-                //status:"Off".to_string(),
                 name: "HotSpot".to_string(),
                 room: "Kitchen".to_string(),
             }],
             kettles: vec![SmartKettle {
-                //status:"Off".to_string(),
                 name: "HotSpot".to_string(),
                 room: "Kitchen".to_string(),
             }],
