@@ -3,6 +3,8 @@ use crate::smart_house_errors::*;
 use anyhow::Result;
 use std::collections::HashMap;
 use std::collections::HashSet;
+
+#[derive(Clone)]
 struct Room {
     devices: HashSet<String>,
 }
@@ -13,7 +15,7 @@ impl Room {
         Room { devices: dev_ }
     }
 }
-
+#[derive(Clone)]
 pub struct SmartHouse {
     name: String,
     rooms: HashMap<String, Room>,
