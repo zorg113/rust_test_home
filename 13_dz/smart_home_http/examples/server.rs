@@ -39,21 +39,35 @@ fn report(house: SmartHouseData<'_>) -> Value {
 }
 
 #[get("/smart_home/rooms")]
-fn get_rooms() -> Value {
-    json!({"status": "ok"})
+fn get_rooms(house: SmartHouseData<'_>) -> Value {
+    let rooms = house.lock().unwrap();
+    match rooms.get_rooms() {
+        Ok(u) => json!({"status": "ok", "data": u}),
+        Err(e) => json!({"status": "err", "data": e.to_string()}),
+    }
 }
 
 #[get("/smart_home/<room>/devices")]
-fn get_room_devices(room: String) -> Value {
+fn get_room_devices(room: String, house: SmartHouseData<'_>) -> Value {
+    let dev = house.lock().unwrap();
+    match dev.devices(&room) {
+        Some(u) => json!({"status": "ok", "data": u}),
+        None => json!({"status": "err"}),
+    }
+}
+
+#[post("/smart_home/room", format = "json", data = "<message>")]
+fn rooms(message: Json<MessageRoom>, house: SmartHouseData<'_>) -> Value {
+    let h = house.lock().unwrap();
+    let action = &message.action;
+    match action {
+        Actions::Add => h.add_room(dev_provider),
+        Actions::Delete=> println!("delete room")
+    }
     json!({"status": "ok"})
 }
 
-#[put("/smart_home/room", format = "json", data = "<message>")]
-fn rooms(message: Json<MessageRoom>) -> Value {
-    json!({"status": "ok"})
-}
-
-#[put("/smart_home/room/device", format = "json", data = "<message>")]
+#[post("/smart_home/room/device", format = "json", data = "<message>")]
 fn devices(message: Json<MessageDevice>) -> Value {
     json!({"status": "ok"})
 }
