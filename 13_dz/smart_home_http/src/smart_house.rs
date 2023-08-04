@@ -31,7 +31,7 @@ impl SmartHouse {
 
     pub fn add_room(
         &mut self,
-        dev_provider: &dyn DeviceChangeContentProvider,
+        dev_provider: &dyn RoomChangeContentProvider,
     ) -> Result<bool, SmartHouseErros> {
         let room = dev_provider.add_room_in_home();
         if self.rooms.contains_key(room) {
@@ -68,7 +68,7 @@ impl SmartHouse {
 
     pub fn delete_room(
         &mut self,
-        dev_provider: &dyn DeviceChangeContentProvider,
+        dev_provider: &dyn RoomChangeContentProvider,
     ) -> Result<bool, SmartHouseErros> {
         let room = dev_provider.delete_room().to_string();
         if self.rooms.contains_key(&room) {

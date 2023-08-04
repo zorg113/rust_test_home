@@ -1,7 +1,10 @@
 use rocket::serde::json::{json, Json, Value};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::State;
-use smart_home::smart_devices::{DeviceLocationProvider, SmartSocket, SmartThermometer};
+use smart_home::smart_devices::{
+    DeviceChangeContentProvider, DeviceLocationProvider, RoomChangeContentProvider, SmartSocket,
+    SmartThermometer,
+};
 use smart_home::smart_house::SmartHouse;
 use std::sync::{Arc, Mutex};
 
@@ -24,6 +27,26 @@ struct MessageDevice {
     action: Actions,
     name_room: String,
     name_device: String,
+}
+
+impl RoomChangeContentProvider for MessageRoom {
+    fn add_room_in_home(&self) -> &str {
+        &self.name_room
+    }
+
+    fn delete_room(&self) -> &str {
+        &self.name_room
+    }
+}
+
+impl DeviceChangeContentProvider for MessageDevice {
+    fn add_device_into_room(&self) -> (&str, &str) {
+        (&self.name_room, &self.name_device)
+    }
+
+    fn delete_device_in_room(&self) -> (&str, &str) {
+        (&self.name_room, &self.name_device)
+    }
 }
 
 type SmartHouseHttp = Mutex<Box<SmartHouse>>;
@@ -60,10 +83,10 @@ fn get_room_devices(room: String, house: SmartHouseData<'_>) -> Value {
 fn rooms(message: Json<MessageRoom>, house: SmartHouseData<'_>) -> Value {
     let h = house.lock().unwrap();
     let action = &message.action;
-    match action {
-        Actions::Add => h.add_room(dev_provider),
-        Actions::Delete=> println!("delete room")
-    }
+    let result = match action {
+        Actions::Add => h.add_room(message),
+        Actions::Delete => h.delete_room(message),
+    };
     json!({"status": "ok"})
 }
 

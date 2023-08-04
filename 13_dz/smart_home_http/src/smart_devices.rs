@@ -40,14 +40,14 @@ pub trait DeviceInfoProvider {
     fn get_device_info(&self, room: &str, name: &str) -> Result<String, DeviceInfoProviderError>;
 }
 
+pub trait RoomChangeContentProvider {
+    fn add_room_in_home(&self) -> &str;
+    fn delete_room(&self) -> &str;
+}
+
 pub trait DeviceChangeContentProvider {
     fn add_device_into_room(&self) -> (&str, &str);
-
-    fn add_room_in_home(&self) -> &str;
-
     fn delete_device_in_room(&self) -> (&str, &str);
-
-    fn delete_room(&self) -> &str;
 }
 
 pub trait DeviceLocationProvider {
