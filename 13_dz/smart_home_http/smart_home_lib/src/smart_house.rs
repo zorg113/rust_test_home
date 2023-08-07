@@ -1,11 +1,12 @@
 use crate::smart_devices::*;
 use crate::smart_house_errors::*;
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-#[derive(Clone)]
-struct Room {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Room {
     devices: HashSet<String>,
 }
 
@@ -15,10 +16,14 @@ impl Room {
         Room { devices: dev_ }
     }
 }
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct SmartHouse {
     name: String,
     rooms: HashMap<String, Room>,
+}
+
+pub trait Formatter {
+    fn format(&self, key: &str, data: &SmartHouse, buf: &mut String);
 }
 
 impl SmartHouse {
@@ -167,6 +172,15 @@ impl SmartHouse {
             }
             out = format!("{}\n", out);
         }
+        if out.is_empty() {
+            return Err(SmartHouseErros::ReportIsEmpty);
+        }
+        Ok(out)
+    }
+
+    pub fn home_report_new<T: Formatter>(self, g: T) -> Result<String, SmartHouseErros> {
+        let mut out: String = "".to_string();
+        g.format("smart_house", &self, &mut out);
         if out.is_empty() {
             return Err(SmartHouseErros::ReportIsEmpty);
         }

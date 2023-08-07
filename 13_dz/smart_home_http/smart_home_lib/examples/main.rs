@@ -1,7 +1,6 @@
-
-use smart_home::smart_devices::*;
-use smart_home::smart_house::*;
-use smart_home::smart_house_errors::DeviceInfoProviderError;
+use smart_home_lib::smart_devices::*;
+use smart_home_lib::smart_house::*;
+use smart_home_lib::smart_house_errors::DeviceInfoProviderError;
 // ***** Пример использования библиотеки умный дом
 // Пользовательские поставщики информации об устройствах.
 // Могут как хранить устройства, так и заимствывать.

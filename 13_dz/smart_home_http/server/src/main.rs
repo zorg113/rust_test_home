@@ -1,11 +1,11 @@
 use rocket::serde::json::{json, Json, Value};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::State;
-use smart_home::smart_devices::{
+use smart_home_lib::smart_devices::{
     DeviceChangeContentProvider, DeviceLocationProvider, RoomChangeContentProvider, SmartSocket,
     SmartThermometer,
 };
-use smart_home::smart_house::SmartHouse;
+use smart_home_lib::smart_house::{Formatter, SmartHouse};
 use std::sync::{Arc, Mutex};
 
 #[macro_use]
@@ -49,13 +49,21 @@ impl DeviceChangeContentProvider for MessageDevice {
     }
 }
 
+pub struct SmartHomeJson;
+
+impl Formatter for SmartHomeJson {
+    fn format(&self, key: &str, data: &SmartHouse, buf: &mut String) {
+        buf.push_str(&json!({ key: data}).to_string())
+    }
+}
+
 type SmartHouseHttp = Mutex<Box<SmartHouse>>;
 type SmartHouseData<'a> = &'a State<Arc<SmartHouseHttp>>;
 
 #[get("/smart_home/report")]
 fn report(house: SmartHouseData<'_>) -> Value {
     let rep = house.lock().unwrap().clone();
-    match rep.home_report() {
+    match rep.home_report_new(SmartHomeJson) {
         Ok(_u) => json!({"status": "ok", "data": _u}),
         Err(e) => json!({"status": "err", "data": e.to_string()}),
     }
@@ -89,12 +97,12 @@ fn rooms(message: Json<MessageRoom>, house: SmartHouseData<'_>) -> Value {
     };
     match result {
         Ok(_u) => json!({"status": "ok"}),
-        Err(e)  => json!({"status": "error" , "msg" : e.to_string()})       
+        Err(e) => json!({"status": "error" , "msg" : e.to_string()}),
     }
 }
 
 #[post("/smart_home/room/device", format = "json", data = "<message>")]
-fn devices(message: Json<MessageDevice>,house: SmartHouseData<'_>) -> Value {
+fn devices(message: Json<MessageDevice>, house: SmartHouseData<'_>) -> Value {
     let mut h = house.lock().unwrap();
     let action = &message.action;
     let result = match action {
@@ -103,7 +111,7 @@ fn devices(message: Json<MessageDevice>,house: SmartHouseData<'_>) -> Value {
     };
     match result {
         Ok(_u) => json!({"status": "ok"}),
-        Err(e)  => json!({"status": "error" , "msg" : e.to_string()})       
+        Err(e) => json!({"status": "error" , "msg" : e.to_string()}),
     }
 }
 
