@@ -56,7 +56,7 @@ type SmartHouseData<'a> = &'a State<Arc<SmartHouseHttp>>;
 fn report(house: SmartHouseData<'_>) -> Value {
     let rep = house.lock().unwrap().clone();
     match rep.home_report() {
-        Ok(u) => json!({"status": "ok", "data": u.to_string()}),
+        Ok(_u) => json!({"status": "ok", "data": _u}),
         Err(e) => json!({"status": "err", "data": e.to_string()}),
     }
 }
@@ -81,18 +81,30 @@ fn get_room_devices(room: String, house: SmartHouseData<'_>) -> Value {
 
 #[post("/smart_home/room", format = "json", data = "<message>")]
 fn rooms(message: Json<MessageRoom>, house: SmartHouseData<'_>) -> Value {
-    let h = house.lock().unwrap();
+    let mut h = house.lock().unwrap();
     let action = &message.action;
     let result = match action {
-        Actions::Add => h.add_room(message),
-        Actions::Delete => h.delete_room(message),
+        Actions::Add => h.add_room(&message.0),
+        Actions::Delete => h.delete_room(&message.0),
     };
-    json!({"status": "ok"})
+    match result {
+        Ok(_u) => json!({"status": "ok"}),
+        Err(e)  => json!({"status": "error" , "msg" : e.to_string()})       
+    }
 }
 
 #[post("/smart_home/room/device", format = "json", data = "<message>")]
-fn devices(message: Json<MessageDevice>) -> Value {
-    json!({"status": "ok"})
+fn devices(message: Json<MessageDevice>,house: SmartHouseData<'_>) -> Value {
+    let mut h = house.lock().unwrap();
+    let action = &message.action;
+    let result = match action {
+        Actions::Add => h.add_device(&message.0),
+        Actions::Delete => h.delete_device(&message.0),
+    };
+    match result {
+        Ok(_u) => json!({"status": "ok"}),
+        Err(e)  => json!({"status": "error" , "msg" : e.to_string()})       
+    }
 }
 
 #[catch(404)]
