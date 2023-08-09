@@ -1,250 +1,128 @@
-use gloo::storage::{LocalStorage, Storage};
-use state::{Entry, Filter, State};
-use strum::IntoEnumIterator;
-use web_sys::HtmlInputElement as InputElement;
-use yew::events::{FocusEvent, KeyboardEvent};
-use yew::html::Scope;
-use yew::{classes, html, Classes, Component, Context, Html, NodeRef, TargetCast};
+use reqwasm::http::Request;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::collections::HashSet;
+use yew::prelude::*;
 
-mod state;
-
-const KEY: &str = "yew.todomvc.self";
-
-pub enum Msg {
-    Add(String),
-    Edit((usize, String)),
-    Remove(usize),
-    SetFilter(Filter),
-    ToggleAll,
-    ToggleEdit(usize),
-    Toggle(usize),
-    ClearCompleted,
-    Focus,
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Room {
+    devices: HashSet<String>,
 }
 
-pub struct App {
-    state: State,
-    focus_ref: NodeRef,
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SmartHouse {
+    name: String,
+    rooms: HashMap<String, Room>,
 }
 
-impl Component for App {
-    type Message = Msg;
-    type Properties = ();
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Forecast {
+    data: SmartHouse,
+}
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        let entries = LocalStorage::get(KEY).unwrap_or_else(|_| Vec::new());
-        let state = State {
-            entries,
-            filter: Filter::All,
-            edit_value: "".into(),
-        };
-        let focus_ref = NodeRef::default();
-        Self { state, focus_ref }
-    }
+#[derive(Clone)]
+struct JsRoom {
+    name: String,
+    device: String,
+}
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            Msg::Add(description) => {
-                let description = description.trim();
-                if !description.is_empty() {
-                    let entry = Entry {
-                        description: description.to_string(),
-                        completed: false,
-                        editing: false,
-                    };
-                    self.state.entries.push(entry);
+#[function_component]
+fn App() -> Html {
+    let forecast = Box::new(use_state(|| None));
+    let error = Box::new(use_state(|| None));
+    let retry = {
+        let forecast = forecast.clone();
+        let error = error.clone();
+        Callback::from(move |_: MouseEvent| {
+            let forecast = forecast.clone();
+            let error = error.clone();
+            wasm_bindgen_futures::spawn_local(async move {
+                let forecast_endpoint = "http://localhost:8000/api/smart_home/report";
+                let fetched_forecast = Request::get(&forecast_endpoint).send().await;
+                match fetched_forecast {
+                    Ok(response) => {
+                        let json: Result<Forecast, _> = response.json().await;
+                        match json {
+                            Ok(f) => {
+                                forecast.set(Some(f));
+                            }
+                            Err(e) => error.set(Some(e.to_string())),
+                        }
+                    }
+                    Err(e) => error.set(Some(e.to_string())),
+                }
+            });
+        })
+    };
+
+    let get_rooms = { Callback::from(move |_: MouseEvent| {}) };
+    let get_devices = { Callback::from(move |_: MouseEvent| {}) };
+    match (*forecast).as_ref() {
+        Some(f) => {
+            let mut vec_room: Vec<JsRoom> = vec![];
+            for (name_r, dev) in &f.data.rooms {
+                let mut js_room = JsRoom {
+                    name: name_r.clone(),
+                    device: "".to_string(),
+                };
+                for d in &dev.devices {
+                    js_room.device = d.clone();
+                    vec_room.push(js_room.clone());
                 }
             }
-            Msg::Edit((idx, edit_value)) => {
-                self.state.complete_edit(idx, edit_value.trim().to_string());
-                self.state.edit_value = "".to_string();
-            }
-            Msg::Remove(idx) => {
-                self.state.remove(idx);
-            }
-            Msg::SetFilter(filter) => {
-                self.state.filter = filter;
-            }
-            Msg::ToggleEdit(idx) => {
-                let entry = self
-                    .state
-                    .entries
-                    .iter()
-                    .filter(|e| self.state.filter.fits(e))
-                    .nth(idx)
-                    .unwrap();
-                self.state.edit_value = entry.description.clone();
-                self.state.clear_all_edit();
-                self.state.toggle_edit(idx);
-            }
-            Msg::ToggleAll => {
-                let status = !self.state.is_all_completed();
-                self.state.toggle_all(status);
-            }
-            Msg::Toggle(idx) => {
-                self.state.toggle(idx);
-            }
-            Msg::ClearCompleted => {
-                self.state.clear_completed();
-            }
-            Msg::Focus => {
-                if let Some(input) = self.focus_ref.cast::<InputElement>() {
-                    input.focus().unwrap();
-                }
-            }
-        }
-        LocalStorage::set(KEY, &self.state.entries).expect("failed to set");
-        true
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let hidden_class = if self.state.entries.is_empty() {
-            "hidden"
-        } else {
-            ""
-        };
-        html! {
-            <div class="todomvc-wrapper">
-                <section class="todoapp">
-                    <header class="header">
-                        <h1>{ "todos" }</h1>
-                        { self.view_input(ctx.link()) }
-                    </header>
-                    <section class={classes!("main", hidden_class)}>
-                        <input
-                            type="checkbox"
-                            class="toggle-all"
-                            id="toggle-all"
-                            checked={self.state.is_all_completed()}
-                            onclick={ctx.link().callback(|_| Msg::ToggleAll)}
-                        />
-                        <label for="toggle-all" />
-                        <ul class="todo-list">
-                            { for self.state.entries.iter().filter(|e| self.state.filter.fits(e)).enumerate().map(|e| self.view_entry(e, ctx.link())) }
-                        </ul>
-                    </section>
-                    <footer class={classes!("footer", hidden_class)}>
-                        <span class="todo-count">
-                            <strong>{ self.state.total() }</strong>
-                            { " item(s) left" }
-                        </span>
-                        <ul class="filters">
-                            { for Filter::iter().map(|flt| self.view_filter(flt, ctx.link())) }
-                        </ul>
-                        <button class="clear-completed" onclick={ctx.link().callback(|_| Msg::ClearCompleted)}>
-                            { format!("Clear completed ({})", self.state.total_completed()) }
-                        </button>
-                    </footer>
-                </section>
-                <footer class="info">
-                    <p>{ "Double-click to edit a todo" }</p>
-                    <p>{ "Written by " }<a href="https://github.com/DenisKolodin/" target="_blank">{ "Denis Kolodin" }</a></p>
-                    <p>{ "Part of " }<a href="http://todomvc.com/" target="_blank">{ "TodoMVC" }</a></p>
-                </footer>
-            </div>
-        }
-    }
-}
-
-impl App {
-    fn view_filter(&self, filter: Filter, link: &Scope<Self>) -> Html {
-        let cls = if self.state.filter == filter {
-            "selected"
-        } else {
-            "not-selected"
-        };
-        html! {
-            <li>
-                <a class={cls}
-                   href={filter.as_href()}
-                   onclick={link.callback(move |_| Msg::SetFilter(filter))}
-                >
-                    { filter }
-                </a>
-            </li>
-        }
-    }
-
-    fn view_input(&self, link: &Scope<Self>) -> Html {
-        let onkeypress = link.batch_callback(|e: KeyboardEvent| {
-            if e.key() == "Enter" {
-                let input: InputElement = e.target_unchecked_into();
-                let value = input.value();
-                input.set_value("");
-                Some(Msg::Add(value))
-            } else {
-                None
-            }
-        });
-        html! {
-            // You can use standard Rust comments. One line:
-            // <li></li>
-            <input
-                class="new-todo"
-                placeholder="What needs to be done?"
-                {onkeypress}
-            />
-            /* Or multiline:
-            <ul>
-                <li></li>
-            </ul>
-            */
-        }
-    }
-
-    fn view_entry(&self, (idx, entry): (usize, &Entry), link: &Scope<Self>) -> Html {
-        let mut class = Classes::from("todo");
-        if entry.editing {
-            class.push(" editing");
-        }
-        if entry.completed {
-            class.push(" completed");
-        }
-        html! {
-            <li {class}>
-                <div class="view">
-                    <input
-                        type="checkbox"
-                        class="toggle"
-                        checked={entry.completed}
-                        onclick={link.callback(move |_| Msg::Toggle(idx))}
-                    />
-                    <label ondblclick={link.callback(move |_| Msg::ToggleEdit(idx))}>{ &entry.description }</label>
-                    <button class="destroy" onclick={link.callback(move |_| Msg::Remove(idx))} />
-                </div>
-                { self.view_entry_edit_input((idx, entry), link) }
-            </li>
-        }
-    }
-
-    fn view_entry_edit_input(&self, (idx, entry): (usize, &Entry), link: &Scope<Self>) -> Html {
-        let edit = move |input: InputElement| {
-            let value = input.value();
-            input.set_value("");
-            Msg::Edit((idx, value))
-        };
-
-        let onblur = link.callback(move |e: FocusEvent| edit(e.target_unchecked_into()));
-
-        let onkeypress = link.batch_callback(move |e: KeyboardEvent| {
-            (e.key() == "Enter").then(|| edit(e.target_unchecked_into()))
-        });
-
-        if entry.editing {
             html! {
-                <input
-                    class="edit"
-                    type="text"
-                    ref={self.focus_ref.clone()}
-                    value={self.state.edit_value.clone()}
-                    onmouseover={link.callback(|_| Msg::Focus)}
-                    {onblur}
-                    {onkeypress}
-                />
+                  <table class="table">
+                  <tr class="table">
+                    <th class="table" >{"Room"}</th>
+                    <th class="table">{"Device"}</th>
+                  </tr>
+                  {
+                    vec_room.into_iter().map(|room| {
+                        html!{
+                            <tr class="table">
+                            <td class="table">{ format!("{}",room.name) }</td>
+                            <td class="table">{ format!("{}",room.device) }</td>
+                            </tr>
+                        }
+                    }).collect::<Html>()
+                  }
+
+                </table>
             }
-        } else {
-            html! { <input type="hidden" /> }
         }
+        None => match (*error).as_ref() {
+            Some(e) => {
+                html! {
+                    <>
+                        {"error"} {e}
+                        <button onclick={retry}>{"retry"}</button>
+                    </>
+                }
+            }
+            None => {
+                html! {
+                    <>
+                        {"No data yet"}
+                        <table class="table">
+                           <tr>
+                                <td>
+                                    <button onclick={retry}>{"Call Report"}</button>
+                                </td>
+                                <td>
+                                    <button onclick={get_rooms}>{"Call Show Rooms"}</button>
+                                </td>
+                                <td>
+                                    <button onclick={get_devices}>{"Call Show Device In Room"}</button>
+                                </td>
+                           </tr>
+                        </table>
+                    </>
+                }
+            }
+        },
     }
 }
 

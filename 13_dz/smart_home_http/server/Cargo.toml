@@ -9,6 +9,7 @@ edition = "2021"
 thiserror = "1.0.*"
 anyhow = "1.0.*"
 serde = "1.*"
+serde_json = "1.*"
 smart_home_lib = { path = "./../smart_home_lib" }
 #rocket = "0.5.0-rc.3"
 

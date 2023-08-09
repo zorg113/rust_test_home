@@ -178,12 +178,12 @@ impl SmartHouse {
         Ok(out)
     }
 
-    pub fn home_report_new<T: Formatter>(self, g: T) -> Result<String, SmartHouseErros> {
+    pub fn home_report_new<T: Formatter>(self, g: T) -> Result<SmartHouse, SmartHouseErros> {
         let mut out: String = "".to_string();
         g.format("smart_house", &self, &mut out);
         if out.is_empty() {
             return Err(SmartHouseErros::ReportIsEmpty);
         }
-        Ok(out)
+        Ok(self)
     }
 }

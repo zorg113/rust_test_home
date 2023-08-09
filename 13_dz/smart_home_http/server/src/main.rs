@@ -1,13 +1,17 @@
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::http::Header;
 use rocket::serde::json::{json, Json, Value};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::State;
+use rocket::{get, routes};
+use rocket::{Request, Response};
+use serde_json;
 use smart_home_lib::smart_devices::{
     DeviceChangeContentProvider, DeviceLocationProvider, RoomChangeContentProvider, SmartSocket,
     SmartThermometer,
 };
 use smart_home_lib::smart_house::{Formatter, SmartHouse};
 use std::sync::{Arc, Mutex};
-
 #[macro_use]
 extern crate rocket;
 #[derive(Serialize, Deserialize, Debug)]
@@ -64,7 +68,7 @@ type SmartHouseData<'a> = &'a State<Arc<SmartHouseHttp>>;
 fn report(house: SmartHouseData<'_>) -> Value {
     let rep = house.lock().unwrap().clone();
     match rep.home_report_new(SmartHomeJson) {
-        Ok(_u) => json!({"status": "ok", "data": _u}),
+        Ok(_u) => json!({"status": "ok", "data": &_u}),
         Err(e) => json!({"status": "err", "data": e.to_string()}),
     }
 }
@@ -135,7 +139,9 @@ fn rocket() -> _ {
             Err(e) => panic!("Problem with add_device in home : {:?}", e),
         }
     }
+
     rocket::build()
+        .attach(CORS)
         .mount("/api", routes![report, get_rooms, get_room_devices])
         .mount("/api", routes![rooms, devices])
         .register("/api", catchers![not_found])
@@ -207,4 +213,26 @@ fn load_devices() -> AllDeviceInfoProvider {
         ],
     };
     devices_in_home
+}
+
+pub struct CORS;
+
+#[rocket::async_trait]
+impl Fairing for CORS {
+    fn info(&self) -> Info {
+        Info {
+            name: "Add CORS headers to responses",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, GET, PATCH, OPTIONS",
+        ));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+    }
 }
