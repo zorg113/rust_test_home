@@ -33,7 +33,7 @@ struct JsRoom {
 fn App() -> Html {
     let forecast = Box::new(use_state(|| None));
     let error = Box::new(use_state(|| None));
-    let retry = {
+    let get_report = {
         let forecast = forecast.clone();
         let error = error.clone();
         Callback::from(move |_: MouseEvent| {
@@ -60,6 +60,11 @@ fn App() -> Html {
 
     let get_rooms = { Callback::from(move |_: MouseEvent| {}) };
     let get_devices = { Callback::from(move |_: MouseEvent| {}) };
+    let add_device = { Callback::from(move |_: MouseEvent| {}) };
+    let delete_device = { Callback::from(move |_: MouseEvent| {}) };
+    let delete_room = { Callback::from(move |_: MouseEvent| {}) };
+    let add_room = { Callback::from(move |_: MouseEvent| {}) };
+    let get_devices_status = { Callback::from(move |_: MouseEvent| {}) };
     match (*forecast).as_ref() {
         Some(f) => {
             let mut vec_room: Vec<JsRoom> = vec![];
@@ -98,7 +103,7 @@ fn App() -> Html {
                 html! {
                     <>
                         {"error"} {e}
-                        <button onclick={retry}>{"retry"}</button>
+                        <button onclick={get_report}>{"get_report"}</button>
                     </>
                 }
             }
@@ -109,13 +114,28 @@ fn App() -> Html {
                         <table class="table">
                            <tr>
                                 <td>
-                                    <button onclick={retry}>{"Call Report"}</button>
+                                    <button onclick={get_report}>{"Call Report"}</button>
                                 </td>
                                 <td>
                                     <button onclick={get_rooms}>{"Call Show Rooms"}</button>
                                 </td>
                                 <td>
-                                    <button onclick={get_devices}>{"Call Show Device In Room"}</button>
+                                    <button onclick={get_devices}>{"Call Show Device In Room with Status"}</button>
+                                </td>
+                                <td>
+                                    <button onclick={get_devices_status}>{"Call Show Device In Room with Status"}</button>
+                                </td>
+                                <td>
+                                    <button onclick={add_device}>{"Call Add Device In Room"}</button>
+                                </td>
+                                <td>
+                                    <button onclick={delete_device}>{"Call Delete Device In Room"}</button>
+                                </td>
+                                <td>
+                                    <button onclick={delete_room}>{"Call Delete  Room"}</button>
+                                </td>
+                                <td>
+                                    <button onclick={add_room}>{"Call Add Room"}</button>
                                 </td>
                            </tr>
                         </table>
