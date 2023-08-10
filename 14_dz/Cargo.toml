@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+  "trprot",
+  "client_socket",
+  "server_socket"
+]
