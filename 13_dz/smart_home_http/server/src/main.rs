@@ -5,13 +5,14 @@ use rocket::serde::{Deserialize, Serialize};
 use rocket::State;
 use rocket::{get, routes};
 use rocket::{Request, Response};
-use serde_json;
 use smart_home_lib::smart_devices::{
-    DeviceChangeContentProvider, DeviceLocationProvider, RoomChangeContentProvider, SmartSocket,
-    SmartThermometer,
+    DeviceChangeContentProvider, DeviceInfoProvider, DeviceLocationProvider,
+    RoomChangeContentProvider, SmartSocket, SmartThermometer,
 };
 use smart_home_lib::smart_house::{Formatter, SmartHouse};
+use smart_home_lib::smart_house_errors::DeviceInfoProviderError;
 use std::sync::{Arc, Mutex};
+
 #[macro_use]
 extern crate rocket;
 #[derive(Serialize, Deserialize, Debug)]
@@ -31,6 +32,14 @@ struct MessageDevice {
     action: Actions,
     name_room: String,
     name_device: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(crate = "rocket::serde")]
+struct MessageDeviceStatus {
+    name_room: String,
+    name_device: String,
+    device_status: String,
 }
 
 impl RoomChangeContentProvider for MessageRoom {
@@ -119,6 +128,16 @@ fn devices(message: Json<MessageDevice>, house: SmartHouseData<'_>) -> Value {
     }
 }
 
+#[get("/smart_home/device_status")]
+fn devices_status(house: SmartHouseData<'_>) -> Value {
+    let h = house.lock().unwrap();
+    let result = h.create_report_new(&load_devices());
+    match result {
+        Ok(_u) => json!({"status": "ok", "data": _u}),
+        Err(e) => json!({"status": "error" , "msg" : e.to_string()}),
+    }
+}
+
 #[catch(404)]
 fn not_found() -> Value {
     json!({
@@ -142,7 +161,10 @@ fn rocket() -> _ {
 
     rocket::build()
         .attach(CORS)
-        .mount("/api", routes![report, get_rooms, get_room_devices])
+        .mount(
+            "/api",
+            routes![report, get_rooms, get_room_devices, devices_status],
+        )
         .mount("/api", routes![rooms, devices])
         .register("/api", catchers![not_found])
         .manage(house)
@@ -176,7 +198,7 @@ fn load_devices() -> AllDeviceInfoProvider {
             SmartSocket {
                 name: "SmartSocket_Kitchen_N2".to_string(),
                 room: "Kitchen".to_string(),
-                status: "Off".to_string(),
+                status: "On".to_string(),
             },
             SmartSocket {
                 name: "SmartSocket_Kitchen_N3".to_string(),
@@ -186,7 +208,7 @@ fn load_devices() -> AllDeviceInfoProvider {
             SmartSocket {
                 name: "SmartSocket_BedRoom_N1".to_string(),
                 room: "BedRoom".to_string(),
-                status: "Off".to_string(),
+                status: "On".to_string(),
             },
             SmartSocket {
                 name: "SmartSocket_BedRoom_N2".to_string(),
@@ -203,7 +225,7 @@ fn load_devices() -> AllDeviceInfoProvider {
             SmartThermometer {
                 name: "SmartThermometr_BedRoom_N1".to_string(),
                 room: "BedRoom".to_string(),
-                status: "Off".to_string(),
+                status: "On".to_string(),
             },
             SmartThermometer {
                 name: "SmartThermometr_BedRoom_N2".to_string(),
@@ -213,6 +235,23 @@ fn load_devices() -> AllDeviceInfoProvider {
         ],
     };
     devices_in_home
+}
+
+impl DeviceInfoProvider for AllDeviceInfoProvider {
+    fn get_device_info(&self, room: &str, name: &str) -> Result<String, DeviceInfoProviderError> {
+        let mut out: String = "".to_string();
+        for sm_socket in &self.sockets {
+            if sm_socket.room == *room && sm_socket.name == *name {
+                out = sm_socket.status.to_string();
+            }
+        }
+        for sm_termo in &self.thermo {
+            if sm_termo.room == *room && sm_termo.name == *name {
+                out = sm_termo.status.to_string();
+            }
+        }
+        Ok(out)
+    }
 }
 
 pub struct CORS;

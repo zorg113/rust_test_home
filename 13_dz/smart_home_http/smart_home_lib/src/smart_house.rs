@@ -22,6 +22,23 @@ pub struct SmartHouse {
     rooms: HashMap<String, Room>,
 }
 
+// for report
+#[derive(Clone, Serialize, Deserialize)]
+struct ReportDevice {
+    name: String,
+    status: String,
+}
+#[derive(Clone, Serialize, Deserialize)]
+struct ReportRoom {
+    room_name: String,
+    devices: Vec<ReportDevice>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Report {
+    rooms: Vec<ReportRoom>,
+}
+
 pub trait Formatter {
     fn format(&self, key: &str, data: &SmartHouse, buf: &mut String);
 }
@@ -160,6 +177,34 @@ impl SmartHouse {
             return Err(SmartHouseErros::DeviceNotFound("EMPTY".to_string()));
         }
         Ok(info)
+    }
+
+    pub fn create_report_new(
+        &self,
+        dev_provider: &dyn DeviceInfoProvider,
+    ) -> Result<Report, SmartHouseErros> {
+        let mut report = Report { rooms: vec![] };
+        for (name_room, room) in &self.rooms {
+            let mut rep_room: ReportRoom = ReportRoom {
+                room_name: "".to_string(),
+                devices: vec![],
+            };
+            for dev in &room.devices {
+                let dat: String = dev_provider.get_device_info(name_room, dev)?;
+                if !dat.is_empty() {
+                    rep_room.room_name = name_room.clone();
+                    rep_room.devices.push(ReportDevice {
+                        name: dev.clone(),
+                        status: dat,
+                    })
+                }
+            }
+            report.rooms.push(rep_room);
+        }
+        if report.rooms.is_empty() {
+            return Err(SmartHouseErros::DeviceNotFound("EMPTY".to_string()));
+        }
+        Ok(report)
     }
 
     pub fn home_report(self) -> Result<String, SmartHouseErros> {

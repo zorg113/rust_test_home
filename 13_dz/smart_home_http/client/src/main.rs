@@ -1,5 +1,3 @@
-use reqwest;
-
 // tokio let's us use "async" on our main function
 #[tokio::main]
 async fn main() {
@@ -119,4 +117,14 @@ async fn main() {
     println!("** Home Kitchen devices {}", result);
     println!(" ------------- ");
     // Report by Status Device
+    let result = client
+        .get("http://127.0.0.1:8000/api//smart_home/device_status")
+        .send()
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
+    println!("** Home Report with device status {}", result);
+    println!(" ------------- ");
 }
