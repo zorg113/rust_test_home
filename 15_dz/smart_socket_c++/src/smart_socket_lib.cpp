@@ -1,7 +1,8 @@
 #include <iostream>
 #include <string>
-#include <strstream>
+#include <sstream>
 #include <memory>
+#include <cstring>
 
 enum Status{
     On,
@@ -27,7 +28,7 @@ public:
     }
 
     std::string get_status(void) {
-       std::strstream s_out;
+       std::ostringstream s_out;
        s_out<<"Status: "<<status_<<" Power: "<< power_ <<"B";
        return s_out.str();
     }

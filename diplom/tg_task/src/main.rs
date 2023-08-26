@@ -117,7 +117,7 @@ impl UpdateHandler for Handler {
 async fn main() {
     dotenv().ok();
     env_logger::init();
-    let token = String::from("6554569375:AAF89ph9Z7faAWJOA0hbLldg8qNBOToEWh8");
+    let token = String::from("TOKEN");
     //let token = env::var("TGBOT_TOKEN").expect("TGBOT_TOKEN is not set");
     let api = Api::new(token).expect("Failed to create API");
     LongPoll::new(api.clone(), Handler { api }).run().await;

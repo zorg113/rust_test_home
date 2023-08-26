@@ -15,7 +15,11 @@ impl SmartSocket {
     fn new() -> Self {
         let lib_: Library;
         unsafe {
-            lib_ = Library::new("smart_socket.dll").unwrap();
+            if cfg!(widows) {
+                lib_ = Library::new("smart_socket.dll").unwrap();
+            } else {
+                lib_ = Library::new("libsmart_socket.so").unwrap();
+            }
         }
         Self { lib: lib_ }
     }
