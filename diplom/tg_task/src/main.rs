@@ -6,7 +6,7 @@ use std::env;
 use tgbot::{
     longpoll::LongPoll,
     methods::SendMessage,
-    types::{InlineKeyboardButton, Message, Update, UpdateKind},
+    types::{InlineKeyboardButton, KeyboardButton, Message, Update, UpdateKind},
     Api, UpdateHandler,
 };
 
@@ -15,17 +15,44 @@ struct Handler {
 }
 
 #[derive(Deserialize, Serialize)]
-struct CallbackData {
-    value: String,
+struct ShowTasks {
+    tasks: String,
 }
 
-impl CallbackData {
+impl ShowTasks {
     fn new<S: Into<String>>(value: S) -> Self {
         Self {
-            value: value.into(),
+            tasks: value.into(),
         }
     }
 }
+
+#[derive(Deserialize, Serialize)]
+struct AddTasks {
+    tasks: String,
+}
+
+impl AddTasks {
+    fn new<S: Into<String>>(value: S) -> Self {
+        Self {
+            tasks: value.into(),
+        }
+    }
+}
+
+/*
+#[derive(Deserialize, Serialize)]
+struct DeleteTasks {
+    tasks: String,
+}
+
+impl DeleteTasks {
+    fn new<S: Into<String>>(value: S) -> Self {
+        Self {
+            tasks: value.into(),
+        }
+    }
+}*/
 
 async fn handle_update(api: &Api, update: Update) -> Option<Message> {
     match update.kind {
@@ -34,13 +61,24 @@ async fn handle_update(api: &Api, update: Update) -> Option<Message> {
             if let Some(commands) = message.get_text().and_then(|text| text.get_bot_commands()) {
                 let command = &commands[0];
                 if command.command == "/start" {
-                    let callback_data = CallbackData::new("hello!");
+                    let callback_show_tasks = ShowTasks::new("&data.clone()");
+                    let callback_data = AddTasks::new("Введите что-то тама где-то почему-то как-то");
                     let method =
-                        SendMessage::new(chat_id, "keyboard example").reply_markup(vec![vec![
+                        SendMessage::new(chat_id, "Менеджер задач").reply_markup(vec![vec![
                             // You also can use with_callback_data in order to pass a plain string
                             InlineKeyboardButton::with_callback_data_struct(
-                                "button",
+                                "Текущие задачи",
+                                &callback_show_tasks,
+                            )
+                            .unwrap(),
+                            InlineKeyboardButton::with_callback_data_struct(
+                                "Добавить задачу",
                                 &callback_data,
+                            )
+                            .unwrap(),
+                            InlineKeyboardButton::with_callback_data_struct(
+                                "Завершить задачу",
+                                &callback_show_tasks,
                             )
                             .unwrap(),
                         ]]);
@@ -52,8 +90,8 @@ async fn handle_update(api: &Api, update: Update) -> Option<Message> {
             if let Some(ref message) = query.message {
                 let chat_id = message.get_chat_id();
                 // or query.data if you have passed a plain string
-                let data = query.parse_data::<CallbackData>().unwrap().unwrap();
-                let method = SendMessage::new(chat_id, data.value);
+                let data = query.parse_data::<ShowTasks>().unwrap().unwrap();
+                let method = SendMessage::new(chat_id, data.tasks);
                 return Some(api.execute(method).await.unwrap());
             }
         }
@@ -73,15 +111,14 @@ impl UpdateHandler for Handler {
                 log::info!("Message sent: {:?}", msg);
             }
         })
-    }
 }
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
     env_logger::init();
-
-    let token = env::var("TGBOT_TOKEN").expect("TGBOT_TOKEN is not set");
+    let token = String::from("6554569375:AAF89ph9Z7faAWJOA0hbLldg8qNBOToEWh8");
+    //let token = env::var("TGBOT_TOKEN").expect("TGBOT_TOKEN is not set");
     let api = Api::new(token).expect("Failed to create API");
     LongPoll::new(api.clone(), Handler { api }).run().await;
 }
