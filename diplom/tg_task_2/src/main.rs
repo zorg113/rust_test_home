@@ -2,7 +2,7 @@
 extern crate lazy_static;
 extern crate pretty_env_logger;
 
-mod Error;
+mod error;
 mod bot;
 mod config;
 mod database;

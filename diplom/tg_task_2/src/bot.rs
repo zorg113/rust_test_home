@@ -1,6 +1,6 @@
 use crate::config::CONF;
 use crate::database::Database;
-use crate::Error::Error;
+use crate::error::Error;
 use async_once::AsyncOnce;
 //use async_std::task;
 //use lazy_static::lazy_static;
