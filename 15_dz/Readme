@@ -1,0 +1,9 @@
+в smart_socket_c++ код библиотеки на С++
+собирается через cmake
+Собранные С++ библиотеки для проверки положить 
+в smart_socket_client/target/<release/debug>.
+(в smart_socket_client/dll расположены уже собранные библиотеки
+работоспособность зависит от используемого runtime
+windows VC140
+linux gcc13
+)

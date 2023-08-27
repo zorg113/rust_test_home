@@ -1,0 +1,12 @@
+/home/zorg/otus/rust/rust_test_home/diplom/tg_task_2/target/debug/deps/libthiserror_impl-acf5b13140f40600.so: /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/lib.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/ast.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/attr.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/expand.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/fmt.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/generics.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/prop.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/valid.rs
+
+/home/zorg/otus/rust/rust_test_home/diplom/tg_task_2/target/debug/deps/thiserror_impl-acf5b13140f40600.d: /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/lib.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/ast.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/attr.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/expand.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/fmt.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/generics.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/prop.rs /home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/valid.rs
+
+/home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/lib.rs:
+/home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/ast.rs:
+/home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/attr.rs:
+/home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/expand.rs:
+/home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/fmt.rs:
+/home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/generics.rs:
+/home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/prop.rs:
+/home/zorg/.cargo/registry/src/github.com-1ecc6299db9ec823/thiserror-impl-1.0.47/src/valid.rs:
