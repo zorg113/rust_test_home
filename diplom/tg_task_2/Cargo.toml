@@ -4,9 +4,28 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = ["."]
 
 [dependencies]
 teloxide = { version = "0.12", features = ["macros"] }
 log = "0.4"
-pretty_env_logger = "0.4"
+pretty_env_logger = "0.5.*"
 tokio = { version = "1.8", features = ["rt-multi-thread", "macros"] }
+sea-orm = { version = "^0.12.*", features = [
+    "sqlx-mysql",
+    "runtime-async-std-native-tls",
+    "macros",
+] }
+lazy_static = "1.4"
+directories = "5.0"
+async_once = "0.2"
+async-std = "1.12"
+
+[dependencies.clap]
+version = "4.4"
+features = ["derive", "env", "string"]
+
+[dependencies.sea-orm-migration]
+version = "0.12"
+features = ["runtime-tokio-rustls", "sqlx-sqlite"]
