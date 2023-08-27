@@ -1,6 +1,7 @@
-pub use sea_orm_migration::prelude::*;
 use std::fs::OpenOptions;
 use std::path::PathBuf;
+
+use crate::migration::DbErr;
 
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Database as SeaOrmDatabase, DatabaseConnection, EntityTrait,
@@ -43,7 +44,7 @@ async fn get_db_pool(db_path: &PathBuf) -> Result<DatabaseConnection, Error> {
         .create(true)
         .open(db_path)?;
     let db_str = format!("sqlite:{}", db_path.display());
-    let pool = SeaOrmDatabase::connect(&db_str).await?;
+    let pool = SeaOrmDatabase::connect(&db_str).await.unwrap();
     Ok(pool)
 }
 
@@ -55,5 +56,9 @@ pub struct Database {
 impl Database {
     pub async fn new(db_path: &PathBuf) -> Result<Self, Error> {
         get_db_pool(db_path).await.map(|pool| Self { pool })
+    }
+
+    pub async fn apply_migrations(&self) -> Result<(), Error> {
+        Ok(())
     }
 }

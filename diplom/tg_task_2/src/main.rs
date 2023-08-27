@@ -6,6 +6,7 @@ mod Error;
 mod bot;
 mod config;
 mod database;
+mod migration;
 
 #[tokio::main]
 async fn main() {
