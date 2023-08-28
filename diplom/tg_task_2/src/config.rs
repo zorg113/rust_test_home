@@ -8,7 +8,7 @@ lazy_static::lazy_static! {
 }
 
 #[derive(Parser)]
-#[command(author,version,about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 pub struct Conf {
     #[arg(
         short,
