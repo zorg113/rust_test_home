@@ -79,7 +79,7 @@ async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error
 async fn command_handler(msg: Message, bot: Bot, cmd: MainMenu) -> Result<(), Error> {
     println!("Command handler");
     let cntrl = TgMessageController::from_msg(&bot, &msg).await?;
-    cntrl.show_task().await;
+    cntrl.choose_task(2).await;
     log::info!("Command handler");
     Ok(())
 }
