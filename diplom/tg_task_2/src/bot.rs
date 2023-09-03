@@ -1,4 +1,5 @@
 use crate::config::CONF;
+use crate::controllers::TgMessageController;
 use crate::database::Database;
 use crate::error::Error;
 use async_once::AsyncOnce;
@@ -11,20 +12,21 @@ use teloxide::{
 };
 
 #[derive(BotCommands, Clone)]
-#[command(description = "Commands", rename_rule = "lowercase")]
-pub enum Command {
-    #[command(description = "create new task")]
+#[command(description = "MainMenu", rename_rule = "lowercase")]
+pub enum MainMenu {
+    #[command(description = "AddTask")]
     NewTask,
-    #[command(description = "create new subtask")]
-    NewSubTask,
-    #[command(description = "show tasks")]
-    ShowTask,
-    #[command(description = "delete task")]
+    #[command(description = "EndTask")]
     DeleteTask,
-    #[command(description = "rename task")]
-    RenameTask,
-    #[command(description = "change task")]
-    ChangeTask,
+}
+
+#[derive(BotCommands, Clone)]
+#[command(description = "AddTaskMenu", rename_rule = "lowercase")]
+pub enum AddTaskMenu {
+    #[command(description = "AddNameTask")]
+    AddNameTask,
+    #[command(description = "Back")]
+    Back,
 }
 
 async fn pool_tasks(db: &Database, bot: Bot) {}
@@ -47,7 +49,7 @@ pub async fn run() {
         .await
         .expect("Failed to apply migrations");
     let bot = Bot::new(&CONF.token);
-    bot.set_my_commands(Command::bot_commands())
+    bot.set_my_commands(MainMenu::bot_commands())
         .await
         .expect("Failed to set bot commands");
 
@@ -56,7 +58,7 @@ pub async fn run() {
     let handler = dptree::entry()
         .branch(
             Update::filter_message()
-                .filter_command::<Command>()
+                .filter_command::<MainMenu>()
                 .endpoint(command_handler),
         )
         .branch(Update::filter_message().endpoint(message_handler))
@@ -70,13 +72,60 @@ pub async fn run() {
 }
 
 async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error> {
-    Err(Error::Database)
+    println!("callback_handler");
+    Ok(())
 }
 
-async fn command_handler(msg: Message, bot: Bot, cmd: Command) -> Result<(), Error> {
-    Err(Error::Database)
+async fn command_handler(msg: Message, bot: Bot, cmd: MainMenu) -> Result<(), Error> {
+    println!("Command handler");
+    let cntrl = TgMessageController::from_msg(&bot, &msg).await?;
+    cntrl.show_task().await;
+    log::info!("Command handler");
+    Ok(())
 }
 
 async fn message_handler(msg: Message, bot: Bot) -> Result<(), Error> {
-    Err(Error::Database)
+    println!("message handler");
+    log::info!("message handler");
+    Ok(())
+}
+
+impl<'a> TgMessageController<'a> {
+    pub async fn new(
+        bot: &'a Bot,
+        chat_id: ChatId,
+        user_id: UserId,
+        msg_id: MessageId,
+    ) -> Result<TgMessageController<'a>, Error> {
+        Ok(Self {
+            //db: DATABASE.get().await,
+            bot,
+            chat_id,
+            user_id,
+            msg_id,
+        })
+    }
+
+    pub async fn from_msg(bot: &'a Bot, msg: &Message) -> Result<TgMessageController<'a>, Error> {
+        Self::new(
+            bot,
+            msg.chat.id,
+            msg.from()
+                .ok_or_else(|| Error::UserNotFound(msg.clone()))?
+                .id,
+            msg.id,
+        )
+        .await
+    }
+
+    pub async fn from_callback_query(
+        bot: &'a Bot,
+        cb_query: &CallbackQuery,
+    ) -> Result<TgMessageController<'a>, Error> {
+        let msg = cb_query
+            .message
+            .as_ref()
+            .ok_or_else(|| Error::NoQueryMessage(cb_query.clone()))?;
+        Self::new(bot, msg.chat.id, cb_query.from.id, msg.id).await
+    }
 }
