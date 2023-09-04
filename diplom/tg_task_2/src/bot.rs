@@ -1,21 +1,20 @@
 use crate::config::CONF;
-use crate::controllers::TgMessageController;
+use crate::controllers::{TgCallbackController, TgMessageController};
 use crate::database::Database;
 use crate::error::Error;
 use async_once::AsyncOnce;
+use teloxide::payloads::AnswerPreCheckoutQuerySetters;
 //use async_std::task;
 //use lazy_static::lazy_static;
-use teloxide::{
-    prelude::*,
-    types::MessageId,
-    utils::command::{self, BotCommands},
-};
+use teloxide::{prelude::*, types::MessageId, utils::command::BotCommands};
 
 #[derive(BotCommands, Clone)]
 #[command(description = "MainMenu", rename_rule = "lowercase")]
 pub enum MainMenu {
     #[command(description = "AddTask")]
     NewTask,
+    #[command(description = "ShowTask")]
+    ShowTasks,
     #[command(description = "EndTask")]
     DeleteTask,
 }
@@ -26,7 +25,7 @@ pub enum AddTaskMenu {
     #[command(description = "AddNameTask")]
     AddNameTask,
     #[command(description = "Back")]
-    Back,
+    MainMenu,
 }
 
 async fn pool_tasks(db: &Database, bot: Bot) {}
@@ -73,15 +72,35 @@ pub async fn run() {
 
 async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error> {
     println!("callback_handler");
-    Ok(())
+    if let Some(cb_data) = &cb_query.data {
+        let ctrl = TgCallbackController::new(&bot, &cb_query).await?;
+        let msg_ctrl = &ctrl.msg_ctl;
+        if let Some(page_num) = cb_data
+            .strip_prefix("select::page::")
+            .and_then(|x| x.parse::<usize>().ok())
+        {
+            msg_ctrl
+                .select_tasks_page(page_num)
+                .await
+                .map_err(From::from)
+        } else {
+            Ok(())
+        }
+    } else {
+        Ok(())
+    }
 }
 
 async fn command_handler(msg: Message, bot: Bot, cmd: MainMenu) -> Result<(), Error> {
     println!("Command handler");
-    let cntrl = TgMessageController::from_msg(&bot, &msg).await?;
-    cntrl.choose_task(2).await;
     log::info!("Command handler");
-    Ok(())
+    let cntrl = TgMessageController::from_msg(&bot, &msg).await?;
+    match cmd {
+        MainMenu::DeleteTask => cntrl.delete_task().await,
+        MainMenu::ShowTasks => cntrl.show_task().await,
+        MainMenu::NewTask => cntrl.new_task().await,
+    }
+    .map_err(From::from)
 }
 
 async fn message_handler(msg: Message, bot: Bot) -> Result<(), Error> {
@@ -127,5 +146,17 @@ impl<'a> TgMessageController<'a> {
             .as_ref()
             .ok_or_else(|| Error::NoQueryMessage(cb_query.clone()))?;
         Self::new(bot, msg.chat.id, cb_query.from.id, msg.id).await
+    }
+}
+
+impl<'a> TgCallbackController<'a> {
+    pub async fn new(
+        bot: &'a Bot,
+        cb_query: &'a CallbackQuery,
+    ) -> Result<TgCallbackController<'a>, Error> {
+        Ok(Self {
+            msg_ctl: TgMessageController::from_callback_query(bot, cb_query).await?,
+            cb_id: &cb_query.id,
+        })
     }
 }

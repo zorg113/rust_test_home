@@ -10,6 +10,7 @@ mod error;
 mod interface_tg;
 mod migration;
 mod statemashine;
+mod test_tasks;
 
 #[tokio::main]
 async fn main() {
