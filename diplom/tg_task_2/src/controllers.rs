@@ -32,7 +32,7 @@ impl TgMessageController<'_> {
 
     pub async fn choose_task(&self, page_num: usize) -> Result<(), RequestError> {
         interface_tg::send_markup(
-            "text",
+            "SelectTask",
             self.get_markup_for_tasks(page_num),
             self.bot,
             self.chat_id,
@@ -41,7 +41,7 @@ impl TgMessageController<'_> {
     }
 
     pub async fn new_task(&self) -> Result<(), RequestError> {
-        self.reply(String::from("NewTask")).await
+        self.reply(String::from("InsertName Task")).await
     }
 
     pub fn get_markup_for_tasks(&self, num: usize) -> InlineKeyboardMarkup {
@@ -55,8 +55,7 @@ impl TgMessageController<'_> {
                         .copied()
                         .map(|current| {
                             let name = current.name;
-                            let mut mark = "select::task".to_owned();
-                            mark.push_str(&18.to_string());
+                            let  mark = "select::task::".to_owned() + &current.id.to_string();
                             InlineKeyboardButton::new(
                                 name,
                                 InlineKeyboardButtonKind::CallbackData(mark),

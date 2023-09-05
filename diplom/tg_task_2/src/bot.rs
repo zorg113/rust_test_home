@@ -75,6 +75,7 @@ async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error
     if let Some(cb_data) = &cb_query.data {
         let ctrl = TgCallbackController::new(&bot, &cb_query).await?;
         let msg_ctrl = &ctrl.msg_ctl;
+        println!("input {}",cb_data);
         if let Some(page_num) = cb_data
             .strip_prefix("select::page::")
             .and_then(|x| x.parse::<usize>().ok())
@@ -83,7 +84,16 @@ async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error
                 .select_tasks_page(page_num)
                 .await
                 .map_err(From::from)
-        } else {
+        }
+        else if let Some(task_id) = cb_data
+             .strip_prefix("select::task::")
+            .and_then(|x| x.parse::<i32>().ok())
+        {
+            println!("Select {}",task_id);
+            Ok(())
+        }
+        else {
+            println!("Ups");
             Ok(())
         }
     } else {
@@ -104,6 +114,7 @@ async fn command_handler(msg: Message, bot: Bot, cmd: MainMenu) -> Result<(), Er
 }
 
 async fn message_handler(msg: Message, bot: Bot) -> Result<(), Error> {
+    // check global state mashine 
     println!("message handler");
     log::info!("message handler");
     Ok(())
@@ -130,8 +141,8 @@ impl<'a> TgMessageController<'a> {
             bot,
             msg.chat.id,
             msg.from()
-                .ok_or_else(|| Error::UserNotFound(msg.clone()))?
-                .id,
+               .ok_or_else(|| Error::UserNotFound(msg.clone()))?
+               .id,
             msg.id,
         )
         .await
