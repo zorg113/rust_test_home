@@ -152,3 +152,10 @@ pub async fn answer_callback_query(
         .await
         .map(|_| ())
 }
+
+pub async fn answer_select_task(bot: &Bot,
+    query_id: &str,
+    text: &str) -> Result<(),RequestError> {
+    
+    Ok(())
+}

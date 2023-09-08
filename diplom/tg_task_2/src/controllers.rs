@@ -96,6 +96,11 @@ impl TgMessageController<'_> {
         )
         .await
     }
+
+    pub async fn show_task_data(&self, task_id: i32) -> Result<(), RequestError> {
+        println!("show_task_data send to bot");
+        Ok(())
+    }
 }
 
 impl TgCallbackController<'_> {}

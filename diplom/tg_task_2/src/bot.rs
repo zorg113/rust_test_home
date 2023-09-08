@@ -90,7 +90,10 @@ async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error
             .and_then(|x| x.parse::<i32>().ok())
         {
             println!("Select {}",task_id);
-            Ok(())
+            msg_ctrl
+                .show_task_data(task_id)
+                .await
+                .map_err(From::from)
         }
         else {
             println!("Ups");
@@ -114,7 +117,7 @@ async fn command_handler(msg: Message, bot: Bot, cmd: MainMenu) -> Result<(), Er
 }
 
 async fn message_handler(msg: Message, bot: Bot) -> Result<(), Error> {
-    // check global state mashine 
+    
     println!("message handler");
     log::info!("message handler");
     Ok(())
