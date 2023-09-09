@@ -153,9 +153,6 @@ pub async fn answer_callback_query(
         .map(|_| ())
 }
 
-pub async fn answer_select_task(bot: &Bot,
-    query_id: &str,
-    text: &str) -> Result<(),RequestError> {
-    
+pub async fn answer_select_task(bot: &Bot, query_id: &str, text: &str) -> Result<(), RequestError> {
     Ok(())
 }

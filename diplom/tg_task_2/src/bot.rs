@@ -1,5 +1,5 @@
 use crate::config::CONF;
-use crate::controllers::{TgCallbackController, TgMessageController};
+use crate::controllers::{EventMessage, TgCallbackController, TgMessageController};
 use crate::database::Database;
 use crate::error::Error;
 use async_once::AsyncOnce;
@@ -75,7 +75,7 @@ async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error
     if let Some(cb_data) = &cb_query.data {
         let ctrl = TgCallbackController::new(&bot, &cb_query).await?;
         let msg_ctrl = &ctrl.msg_ctl;
-        println!("input {}",cb_data);
+        println!("input {}", cb_data);
         if let Some(page_num) = cb_data
             .strip_prefix("select::page::")
             .and_then(|x| x.parse::<usize>().ok())
@@ -84,18 +84,21 @@ async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error
                 .select_tasks_page(page_num)
                 .await
                 .map_err(From::from)
-        }
-        else if let Some(task_id) = cb_data
-             .strip_prefix("select::task::")
+        } else if let Some(task_id) = cb_data
+            .strip_prefix("select::task::delete")
             .and_then(|x| x.parse::<i32>().ok())
         {
-            println!("Select {}",task_id);
-            msg_ctrl
-                .show_task_data(task_id)
-                .await
-                .map_err(From::from)
-        }
-        else {
+            println!("Select {}", task_id);
+            msg_ctrl.show_task_data(task_id).await.map_err(From::from)
+        } else if let Some(task_id) = cb_data
+            .strip_prefix("select::task::showtask")
+            .and_then(|x| x.parse::<i32>().ok())
+        {
+            println!("Select {}", task_id);
+            bot.delete_message(msg_ctrl.chat_id, msg_ctrl.msg_id)
+                .await?;
+            msg_ctrl.show_task_data(task_id).await.map_err(From::from)
+        } else {
             println!("Ups");
             Ok(())
         }
@@ -107,20 +110,28 @@ async fn callback_handler(cb_query: CallbackQuery, bot: Bot) -> Result<(), Error
 async fn command_handler(msg: Message, bot: Bot, cmd: MainMenu) -> Result<(), Error> {
     println!("Command handler");
     log::info!("Command handler");
-    let cntrl = TgMessageController::from_msg(&bot, &msg).await?;
+    let mut cntrl = TgMessageController::from_msg(&bot, &msg).await?;
     match cmd {
-        MainMenu::DeleteTask => cntrl.delete_task().await,
-        MainMenu::ShowTasks => cntrl.show_task().await,
+        MainMenu::DeleteTask => cntrl.delete_task(0).await,
+        MainMenu::ShowTasks => cntrl.show_task(0).await,
         MainMenu::NewTask => cntrl.new_task().await,
     }
     .map_err(From::from)
 }
 
 async fn message_handler(msg: Message, bot: Bot) -> Result<(), Error> {
-    
-    println!("message handler");
-    log::info!("message handler");
-    Ok(())
+    let mut cntrl = TgMessageController::from_msg(&bot, &msg).await?;
+    if !cntrl.chat_id.is_user() {
+        Ok(())
+    } else {
+        if let Some(text) = msg.text() {
+            println!("{:#?}", cntrl.event);
+            //Show Loocal State
+        }
+        println!("message handler");
+        log::info!("message handler");
+        Ok(())
+    }
 }
 
 impl<'a> TgMessageController<'a> {
@@ -136,6 +147,7 @@ impl<'a> TgMessageController<'a> {
             chat_id,
             user_id,
             msg_id,
+            event: EventMessage::StartEvent,
         })
     }
 
@@ -144,8 +156,8 @@ impl<'a> TgMessageController<'a> {
             bot,
             msg.chat.id,
             msg.from()
-               .ok_or_else(|| Error::UserNotFound(msg.clone()))?
-               .id,
+                .ok_or_else(|| Error::UserNotFound(msg.clone()))?
+                .id,
             msg.id,
         )
         .await

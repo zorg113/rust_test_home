@@ -2,14 +2,19 @@ use crate::{interface_tg, test_tasks};
 
 use teloxide::prelude::*;
 use teloxide::types::MessageId;
-use teloxide::types::{InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup};
+use teloxide::types::{
+    InlineKeyboardButton, InlineKeyboardButtonKind, InlineKeyboardMarkup, KeyboardButton,
+    KeyboardMarkup,
+};
 use teloxide::RequestError;
 
+#[derive(Debug)]
 pub struct TgMessageController<'a> {
     pub bot: &'a Bot,
     pub msg_id: MessageId,
     pub chat_id: ChatId,
     pub user_id: UserId,
+    pub event: EventMessage,
 }
 
 pub struct TgCallbackController<'a> {
@@ -17,22 +22,22 @@ pub struct TgCallbackController<'a> {
     pub cb_id: &'a str,
 }
 
+#[derive(Debug)]
+pub enum EventMessage {
+    StartEvent,
+    SelectTaskForDelete,
+    SelectTaskShow,
+}
+
 impl TgMessageController<'_> {
     pub async fn reply<R: ToString>(&self, response: R) -> Result<(), RequestError> {
         interface_tg::send_silent_message(&response.to_string(), self.bot, self.chat_id).await
     }
 
-    pub async fn show_task(&self) -> Result<(), RequestError> {
-        self.reply(String::from("Hello")).await
-    }
-
-    pub async fn delete_task(&self) -> Result<(), RequestError> {
-        self.choose_task(1).await
-    }
-
-    pub async fn choose_task(&self, page_num: usize) -> Result<(), RequestError> {
+    pub async fn show_task(&mut self, page_num: usize) -> Result<(), RequestError> {
+        self.event = EventMessage::SelectTaskShow;
         interface_tg::send_markup(
-            "SelectTask",
+            "SelectTaskShow",
             self.get_markup_for_tasks(page_num),
             self.bot,
             self.chat_id,
@@ -40,7 +45,19 @@ impl TgMessageController<'_> {
         .await
     }
 
-    pub async fn new_task(&self) -> Result<(), RequestError> {
+    pub async fn delete_task(&mut self, page_num: usize) -> Result<(), RequestError> {
+        self.event = EventMessage::SelectTaskForDelete;
+        interface_tg::send_markup(
+            "SelectTaskForDelete",
+            self.get_markup_for_tasks(page_num),
+            self.bot,
+            self.chat_id,
+        )
+        .await
+    }
+
+    pub async fn new_task(&mut self) -> Result<(), RequestError> {
+        println!("{:#?} new_task", self.event);
         self.reply(String::from("InsertName Task")).await
     }
 
@@ -55,7 +72,14 @@ impl TgMessageController<'_> {
                         .copied()
                         .map(|current| {
                             let name = current.name;
-                            let  mark = "select::task::".to_owned() + &current.id.to_string();
+                            let mut mark = match self.event {
+                                EventMessage::SelectTaskForDelete => {
+                                    "select::task::delete".to_owned()
+                                }
+                                EventMessage::SelectTaskShow => "select::task::showtask".to_owned(),
+                                _ => panic!(),
+                            };
+                            mark = mark + &current.id.to_string();
                             InlineKeyboardButton::new(
                                 name,
                                 InlineKeyboardButtonKind::CallbackData(mark),
@@ -98,8 +122,19 @@ impl TgMessageController<'_> {
     }
 
     pub async fn show_task_data(&self, task_id: i32) -> Result<(), RequestError> {
-        println!("show_task_data send to bot");
-        Ok(())
+        if let Some(data) = test_tasks::get_task_data_by_id(task_id) {
+            let mut out: String = String::from("NameTask: ");
+            out += data.name;
+            out += "\n";
+            out += "Start Date: ";
+            out += data.start;
+            out += "\n";
+            out += "End  Date: ";
+            out += data.end;
+            self.reply(out).await
+        } else {
+            Ok(())
+        }
     }
 }
 
